@@ -711,6 +711,15 @@ body.projector .wall-map .ocean {
   min-width: 0; grid-template-columns: 1rem repeat(var(--cols), minmax(0, 1fr));
 }
 body.projector .wall-map .axis { font-size: .65rem; }
+/* one or two years in the session: each map can use nearly the full height */
+body.projector .wall-few .wall-map .ocean {
+  width: min(100%, calc((100vh - 13rem) * (var(--cols) + .6) / (var(--rows) + .6)));
+}
+.wall-empty { grid-column: 1 / -1; margin: 3rem 0; text-align: center; font: 700 2rem var(--display); }
+.division-card.resting { opacity: .65; }
+.playing-now { margin: .2rem 0; font-weight: 700; }
+.session-note { margin: .4rem 0 0; color: var(--ink-soft); }
+.session-note.crowded { color: var(--hit); font-weight: 700; }
 .wall-map { padding-bottom: 0; }
 .wall-teams { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
 .wall-teams li { display: flex; align-items: center; gap: .4rem; padding: .25rem .4rem; background: var(--paper); border-left: 5px solid var(--tc); border-radius: 0 4px 4px 0; }

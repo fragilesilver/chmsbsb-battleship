@@ -51,10 +51,12 @@ export function renderOcean(el, game, opts = {}) {
   const intel = opts.intel || {};
   const suggest = opts.suggest || {};
 
-  let html = `<div class="ocean" style="--cols:${cols};--rows:${rows}" role="grid" aria-label="Ocean chart">`;
-  html += `<div class="axis corner"></div>`;
-  for (let c = 0; c < cols; c++) html += `<div class="axis col">${colLabel(c)}</div>`;
+  let frame = `<div class="ocean" style="--cols:${cols};--rows:${rows}" role="grid" aria-label="Ocean chart">`;
+  frame += `<div class="axis corner"></div>`;
+  for (let c = 0; c < cols; c++) frame += `<div class="axis col">${colLabel(c)}</div>`;
 
+  let html = frame;
+  const cells = [];
   for (let r = 0; r < rows; r++) {
     html += `<div class="axis row">${r + 1}</div>`;
     for (let c = 0; c < cols; c++) {
@@ -83,14 +85,26 @@ export function renderOcean(el, game, opts = {}) {
       const label = colLabel(c) + (r + 1) + (shot ? (shot.hit ? ", hit" : ", miss") : "") +
         (ship && !shot ? ", ship" : "") + (!shot && intel[key] ? ", sonar contact" : "") +
         (suggest[key] && !shot ? `, suggested by ${suggest[key]}` : "");
-      html += `<button class="${cls.join(" ")}" data-r="${r}" data-c="${c}"` +
+      const cell = `<button class="${cls.join(" ")}" data-r="${r}" data-c="${c}"` +
         (team ? ` style="--tc:${team.color}"` : "") +
         ` aria-label="${label}">${ship && ship.icon ? `<span class="ship-icon" aria-hidden="true">${ship.icon}</span>` : ""}` +
         `${suggest[key] && !shot ? `<span class="sug" aria-hidden="true">${suggest[key]}</span>` : ""}</button>`;
+      cells.push(cell);
+      html += cell;
     }
   }
   html += `</div>`;
-  el.innerHTML = html;
+
+  // Replace only the squares that changed: it's far lighter on a phone, and a
+  // square being tapped isn't swapped out from under a finger when others are hit.
+  const nodes = el.__oceanFrame === frame && el.__oceanCells?.length === cells.length && el.querySelectorAll(".cell");
+  if (nodes && nodes.length === cells.length) {
+    cells.forEach((cell, i) => { if (cell !== el.__oceanCells[i]) nodes[i].outerHTML = cell; });
+  } else {
+    el.innerHTML = html;
+  }
+  el.__oceanFrame = frame;
+  el.__oceanCells = cells;
 
   if (opts.onCell) {
     el.onclick = (e) => {

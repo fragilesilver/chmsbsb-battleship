@@ -20,6 +20,15 @@ export function divisionStatus(g) {
   return `${round}, ${phase}`;
 }
 
+// Is this year in the session being played now? The Grand Final always counts.
+export const isPlaying = (event, division) =>
+  division === "final" || !!(event && event.playing && event.playing[division]);
+
+// Devices joined to the games in this session (the free Firebase plan allows 100 connections)
+export const sessionDevices = (event, games) =>
+  Object.entries(games).filter(([d, g]) => g && isPlaying(event, d))
+    .reduce((sum, [, g]) => sum + Object.keys(g.players || {}).length, 0);
+
 // Which next steps a dashboard can offer for this division right now
 export function divisionAction(g) {
   if (!g) return null;

@@ -26,7 +26,7 @@ Playing a pseudocode set? Read the [Pseudocode Lesson](PSEUDOCODE_LESSON.md). It
 ## 1. Joining a game
 
 1. Open the game link your teacher gives you (or scan the QR code on the projector).
-2. Type the **4-letter game code** shown on the board, and your **first name**.
+2. Type the **4-letter game code** shown on the board, and your **first name**. If your group is sharing a device, type all your names.
 3. **Pick your avatar.** This icon is painted on every ship you place, so your crew can see who put which ship where.
 4. Press **Join game**.
 
@@ -254,6 +254,9 @@ If your fleet is sunk, keep watching. The chart keeps updating until the end. Wh
 | I can't place ships or fire | Crew roles are on: only the captain places ships and only the gunner fires. Suggest targets to your gunner instead |
 | The chart is too small on my phone | Press **+** or pinch with two fingers. **Fit** zooms back out |
 | The Fire button is greyed out | Pick a target square first, or your crew has run out of that weapon |
+| The Fire button says "Crew reloading" | In a whole-school event, your whole crew can only fire once every few seconds. Keep answering questions while you wait: they still score points |
+| I got "Your crew can launch a torpedo again in…" | In a whole-school event, your whole crew shares a torpedo limit. Agree who launches next |
+| "Couldn't reach the game" | The internet may be slow, or too many devices are connected. Try again, or share a device with your group |
 | "That's your own waters" | Aim at a square in another team's colour |
 | My shots went down but I didn't fire | A teammate fired. Shots are shared by the crew |
 | A tab has disappeared | Your teacher switched that mode off for now |

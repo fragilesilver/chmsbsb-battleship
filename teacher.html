@@ -102,6 +102,21 @@
           <label class="check" id="row-torpedo"><input type="checkbox" id="mode-torpedo" checked> <span id="mode-torpedo-text">Torpedoes</span></label>
           <label class="check" id="row-console"><input type="checkbox" id="mode-console" checked> <span id="mode-console-text">Code console</span></label>
         </fieldset>
+        <fieldset>
+          <legend>Crew limits (0 = no limit)</legend>
+          <p class="hint">These apply to a whole crew, however many devices it has. Without them, a big crew can clear the map in about 2 minutes.</p>
+          <div class="two-col">
+            <label>A crew can fire once every (seconds)
+              <input id="fire-secs" type="number" min="0" max="120" value="15">
+            </label>
+            <label>A crew can launch a torpedo once every (seconds)
+              <input id="crew-torpedo-secs" type="number" min="0" max="300" value="60">
+            </label>
+            <label>A crew can earn a power-up once every (seconds)
+              <input id="power-secs" type="number" min="0" max="600" value="120">
+            </label>
+          </div>
+        </fieldset>
         <div class="two-col">
           <label>Starting shots
             <input id="start-ammo" type="number" min="0" max="8" value="3">

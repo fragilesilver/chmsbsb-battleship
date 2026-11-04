@@ -4,7 +4,7 @@
 import {
   ensureSignedIn, watchGame, getPhase, joinGame, chooseTeam,
   saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
-  setAvatar, crewAvatars, leaveTeam, setRole, makeCaptain, suggestTargets,
+  setAvatar, crewAvatars, leaveTeam, setRole, makeCaptain, suggestTargets, serverNow,
 } from "./firebase.js";
 import {
   fleetFor, shipName, AVATARS, avatarOf, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
@@ -43,7 +43,32 @@ attachZoom($("chart-box"));
 setInterval(() => {
   const el = document.querySelector(".storm-line");
   if (el && state.game) el.outerHTML = stormLine(state.game) || "<div class=\"storm-line\"></div>";
+  // count down the crew's next shot on the Fire button
+  const g = state.game;
+  const teamId = g && g.players && g.players[state.uid] && g.players[state.uid].team;
+  if (g && g.phase === "battle" && teamId && g.settings.fireSecs > 0 && battle.tab === "fire" && g.teams[teamId].alive) updateFireBox(g, teamId);
 }, 1000);
+
+// Leave a list alone unless it changed, and then replace only the rows that did,
+// so a button isn't swapped out from under a finger while others are joining
+function setRows(el, rows) {
+  const old = el.__rows;
+  if (!old || old.length !== rows.length || el.children.length !== rows.length) {
+    el.innerHTML = rows.join("");
+  } else {
+    rows.forEach((row, i) => { if (row !== old[i]) el.children[i].outerHTML = row; });
+  }
+  el.__rows = rows;
+}
+
+function setHtml(el, html) {
+  if (el.__html === html) return;
+  el.__html = html;
+  el.innerHTML = html;
+}
+
+// Seconds until the crew can next fire (0 = now)
+const fireWait = (team) => Math.max(0, Math.ceil(((team.nextFireAt || 0) - serverNow()) / 1000));
 // the projector's QR code links to ?code=XXXX: fill it in, then tidy the address bar
 const linkCode = (new URLSearchParams(location.search).get("code") || "").trim().toUpperCase().slice(0, 4);
 if (linkCode) history.replaceState(null, "", location.pathname);
@@ -82,7 +107,17 @@ $("join-form").addEventListener("submit", (e) => {
 async function tryJoin(code, name, silent) {
   if (!state.uid) return showMsg("Still connecting. Try again in a moment.");
   if (!name) return showMsg("Enter your name.");
-  const phase = await getPhase(code);
+  // A database at its connection limit doesn't refuse: it just never answers
+  let phase;
+  try {
+    phase = await Promise.race([
+      getPhase(code),
+      new Promise((_, no) => setTimeout(() => no(new Error("timeout")), 12000)),
+    ]);
+  } catch {
+    if (!silent) showMsg("Couldn't reach the game. The internet may be slow, or too many devices are connected. Try again, or share a device with your group.");
+    return;
+  }
   if (!phase) {
     if (!silent) showMsg(`No game with code ${code}. Check the board and try again.`);
     return;
@@ -244,14 +279,15 @@ function renderTeamPicker(g) {
   $("team-note").textContent = s.evenTeams || s.crewMax > 0
     ? `Pick the team your teacher assigned you. ${s.evenTeams ? "Crews stay even, so some may be closed until the others catch up." : ""}${s.crewMax > 0 ? ` Up to ${s.crewMax} per crew.` : ""}`
     : "Pick the team your teacher assigned you.";
-  $("team-picker").innerHTML = Object.entries(g.teams).map(([id, t]) => {
+  setRows($("team-picker"), Object.entries(g.teams).map(([id, t]) => {
     const crew = Object.values(g.players || {}).filter((p) => p.team === id).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     const block = crewBlock(g, id, state.uid);
+    const names = crew.slice(0, 6).join(", ") + (crew.length > 6 ? ` and ${crew.length - 6} more` : "");
     return `<li><button class="team-btn" data-team="${id}" style="--tc:${t.color}" ${block ? "disabled" : ""}>
       <span class="pennant"></span><strong>${escapeHtml(t.name)}</strong>
-      <span class="crew">${crew.length} aboard${crew.length ? ": " + crew.join(", ") : ""}</span>
+      <span class="crew">${crew.length} aboard${crew.length ? ": " + names : ""}</span>
       ${block && t.alive ? `<span class="crew closed">${block}</span>` : ""}</button></li>`;
-  }).join("");
+  }));
   $("team-picker").onclick = async (e) => {
     const b = e.target.closest("[data-team]");
     if (!b) return;
@@ -620,19 +656,20 @@ function updateFireBox(g, teamId) {
   if (!cell) return;
   const w = battle.weapon;
   const allowed = myWeapons(g, teamId);
-  $("weapons").innerHTML = [
+  setHtml($("weapons"), [
     ["shot", "Shot", team.ammo],
     ["sonar", "Sonar", pu.sonar || 0],
     ["airstrike", "Airstrike", pu.airstrike || 0],
   ].filter(([id]) => allowed.includes(id))
     .map(([id, label, n]) => `<button role="radio" class="weapon" data-weapon="${id}" aria-checked="${w === id}" ${n > 0 ? "" : "disabled"}>
-      ${label} <span>${n}</span></button>`).join("");
+      ${label} <span>${n}</span></button>`).join(""));
   cell.textContent = state.target ? cellName(...state.target) : "None";
   btn.hidden = !w;
   if (w) {
-    btn.textContent = w === "shot" ? "Fire" : POWERUPS[w].verb;
+    const wait = w === "shot" && g.settings.fireSecs > 0 ? fireWait(team) : 0;
+    btn.textContent = wait ? `Crew reloading: ${wait}s` : w === "shot" ? "Fire" : POWERUPS[w].verb;
     const have = w === "shot" ? team.ammo > 0 : (pu[w] || 0) > 0;
-    btn.disabled = !(state.target && have && !state.busy);
+    btn.disabled = !(state.target && have && !state.busy && !wait);
   }
   // anyone who isn't the gunner can suggest a target
   const roles = rolesOn(g);
@@ -649,9 +686,9 @@ function updateFireBox(g, teamId) {
 
   // the crew's suggestions, most votes first
   const box = $("suggest-box");
-  if (!roles) { box.innerHTML = ""; return; }
+  if (!roles) { setHtml(box, ""); return; }
   const sug = Object.entries(liveSuggestions(g, teamId)).sort((a, b) => b[1].length - a[1].length);
-  box.innerHTML = sug.length
+  setHtml(box, sug.length
     ? `<h4>Crew suggestions</h4><div class="sug-list">${sug.map(([k, uids]) => {
         const [r, c] = k.split("_").map(Number);
         const who = uids.map((u) => avatarOf(g.players[u].avatar) || "⚓").join("");
@@ -659,7 +696,7 @@ function updateFireBox(g, teamId) {
           <strong>${cellName(r, c)}</strong> <span>${who}</span></button>`;
       }).join("")}</div>
       ${g.teams[teamId].suggest && g.teams[teamId].suggest[state.uid] ? `<button class="linkish" data-action="unsuggest">Clear my suggestions</button>` : ""}`
-    : `<p class="hint">No targets suggested yet.</p>`;
+    : `<p class="hint">No targets suggested yet.</p>`);
 }
 
 async function onPanelClick(e, teamId) {
@@ -897,6 +934,8 @@ function renderTorpedo(g) {
 function launchTorpedo(g, teamId) {
   const T = battle.torpedo;
   if (Date.now() < T.readyAt) return;
+  const crewWait = g.settings.crewTorpedoSecs > 0 ? Math.ceil(((g.teams[teamId].nextTorpedoAt || 0) - serverNow()) / 1000) : 0;
+  if (crewWait > 0) return toast(`Your crew just launched a torpedo. Load another in ${crewWait}s.`);
   const targets = torpedoTargets(g, teamId);
   if (!targets.length) return toast("There are no enemy ships left to lock on to.");
   T.cell = targets[Math.floor(Math.random() * targets.length)];
@@ -1174,6 +1213,7 @@ function renderFinished(g, teamId) {
 }
 
 // ---------------- toast ----------------
+let toastTimer = null;
 function toast(text, kind = "") {
   const el = $("toast");
   el.textContent = text;

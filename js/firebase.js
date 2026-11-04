@@ -4,7 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getDatabase, ref, set, get, update, onValue, push, runTransaction,
+  getDatabase, ref, set, get, update, onValue, push, runTransaction, increment,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import {
   TEAM_PRESETS, MAX_AMMO, teamIds, makeCode, cellKey, cellName, zoneOwner,
@@ -44,9 +44,25 @@ export function ensureSignedIn() {
   });
 }
 
+// Crew limits compare times across devices, and a phone's own clock can be minutes out
+let serverOffset = 0;
+onValue(ref(db, ".info/serverTimeOffset"), (snap) => { serverOffset = snap.val() || 0; });
+export const serverNow = () => Date.now() + serverOffset;
+
 // ---------- listening ----------
-export function watchGame(code, callback) {
-  return onValue(gameRef(code), (snap) => callback(snap.val()));
+// A busy game changes many times a second. Unpacking the whole game and redrawing for each
+// change would swamp a cheap phone, so the callback gets the newest state at most every minGapMs.
+export function watchGame(code, callback, minGapMs = 400) {
+  let latest = null, timer = null, last = 0;
+  const flush = () => { timer = null; last = Date.now(); callback(latest.val()); };
+  const stop = onValue(gameRef(code), (snap) => {
+    latest = snap;
+    if (timer) return;
+    const wait = minGapMs - (Date.now() - last);
+    if (wait <= 0) flush();
+    else timer = setTimeout(flush, wait);
+  });
+  return () => { stop(); clearTimeout(timer); };
 }
 
 // "lobby", "placement", "battle", "finished", or null if there's no such game
@@ -64,7 +80,8 @@ export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes ||
 
 // questionSet: id of a built-in set. customSet: a checked set uploaded by the teacher (stored with the game).
 // eventId + division link the game to a whole-school event. grandFinal makes it a one-round final.
-export async function createGame({ teamCount, teamNames, teamYears, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, questionSet, customSet, competitionMode = true, roundDurationMins = 8, totalRounds = 3, eventId = null, division = null, grandFinal = false, players = null }) {
+// fireSecs, crewTorpedoSecs, powerSecs: how often one whole crew can fire, launch a torpedo or earn a power-up (0 = no limit).
+export async function createGame({ teamCount, teamNames, teamYears, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, fireSecs = 0, crewTorpedoSecs = 0, powerSecs = 0, questionSet, customSet, competitionMode = true, roundDurationMins = 8, totalRounds = 3, eventId = null, division = null, grandFinal = false, players = null }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -96,6 +113,7 @@ export async function createGame({ teamCount, teamNames, teamYears, startAmmo, r
       zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
       crewMax: crewMax || 0, evenTeams: evenTeams !== false,
       roles: !!roles, navSecs: navSecs || DEFAULT_NAV_SECS, sciSecs: sciSecs || DEFAULT_SCI_SECS,
+      fireSecs: fireSecs || 0, crewTorpedoSecs: crewTorpedoSecs || 0, powerSecs: powerSecs || 0,
       questionSet: customSet ? "custom" : questionSet || DEFAULT_SET_ID,
       competitionMode: !!competitionMode,
       roundDurationMins: roundDurationMins || 8,
@@ -196,17 +214,40 @@ export async function joinGame(code, uid, name, avatar) {
 export const setAvatar = (code, uid, avatar) =>
   update(gameRef(code, `players/${uid}`), { avatar: avatarOf(avatar) || null });
 
-// Joining a crew is a transaction so two students can't both take the last place
+const CREW_BLOCK_MESSAGE = {
+  Full: "That crew is full. Pick another.",
+  "Join a smaller crew first": "Crews must stay even. Join one of the smaller crews.",
+};
+
 export async function chooseTeam(code, game, uid, teamId) {
-  let reason = "";
-  const t = await runTransaction(gameRef(code, "players"), (players) => {
-    if (!players || !players[uid]) return players;
-    reason = crewBlock({ ...game, players }, teamId, uid);
-    if (reason) return undefined;   // abort
-    players[uid].team = teamId;
-    return players;
-  });
-  if (!t.committed) throw new Error(reason === "Full" ? "That crew is full. Pick another." : "Crews must stay even. Join one of the smaller crews.");
+  const s = game.settings;
+  // With no crew limits, nobody's choice affects anyone else's, so each device writes only its own record
+  if (!s.evenTeams && !(s.crewMax > 0)) {
+    const block = crewBlock(game, teamId, uid);
+    if (block) throw new Error(block);
+    await update(gameRef(code, `players/${uid}`), { team: teamId });
+    return;
+  }
+  // With limits, a transaction stops two students both taking the last place.
+  // Everyone joining at once makes these collide, so try a few times before giving up.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let reason = "";
+    try {
+      const t = await runTransaction(gameRef(code, "players"), (players) => {
+        if (!players || !players[uid]) return players;
+        reason = crewBlock({ ...game, players }, teamId, uid);
+        if (reason) return undefined;   // abort
+        players[uid].team = teamId;
+        return players;
+      });
+      if (t.committed) return;
+      throw Object.assign(new Error(CREW_BLOCK_MESSAGE[reason] || reason || "Couldn't join that crew. Try again."), { final: true });
+    } catch (e) {
+      if (e.final) throw e;
+      await new Promise((done) => setTimeout(done, 300 + Math.random() * 1200));
+    }
+  }
+  throw new Error("Lots of students are joining right now. Tap your crew again.");
 }
 
 export async function leaveTeam(code, game, uid) {
@@ -269,11 +310,30 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   if (game.shots && game.shots[key]) throw new Error(cellName(r, c) + " has already been hit.");
   if (zoneOwner(r, c, n) === teamId) throw new Error("That's your own waters. Aim at another team.");
 
+  // A crew-wide limit stops a big crew from clearing the map in a couple of minutes.
+  // Shots and torpedoes have separate limits; airstrikes come from a limited supply of power-ups.
+  const pace = !opts.free ? { field: "nextFireAt", secs: n.fireSecs, what: "fire" }
+    : opts.via === "torpedo" ? { field: "nextTorpedoAt", secs: n.crewTorpedoSecs, what: "launch a torpedo" }
+    : null;
+  const paced = pace && pace.secs > 0;
+  const paceRef = paced && gameRef(code, `teams/${teamId}/${pace.field}`);
+  const paceError = (at) => new Error(`Your crew can ${pace.what} again in ${Math.max(1, Math.ceil((at - serverNow()) / 1000))}s.`);
+  if (paced && (game.teams[teamId][pace.field] || 0) > serverNow()) throw paceError(game.teams[teamId][pace.field]);
+
   // 1. spend one shot (transaction stops two teammates spending the same shot)
   const ammoRef = gameRef(code, `teams/${teamId}/ammo`);
   if (!opts.free) {
     const spent = await runTransaction(ammoRef, (a) => ((a || 0) > 0 ? a - 1 : undefined));
     if (!spent.committed) throw new Error("No shots left. Earn more to keep firing.");
+  }
+
+  if (paced) {
+    const now = serverNow();
+    const claimedTurn = await runTransaction(paceRef, (at) => ((at || 0) > now ? undefined : now + pace.secs * 1000));
+    if (!claimedTurn.committed) {
+      if (!opts.free) await runTransaction(ammoRef, (a) => (a || 0) + 1);   // a teammate got there first: refund
+      throw paceError(claimedTurn.snapshot.val());
+    }
   }
 
   // 2. claim the cell
@@ -287,6 +347,7 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   const claimed = await runTransaction(gameRef(code, `shots/${key}`), (cur) => (cur ? undefined : shot));
   if (!claimed.committed) {
     if (!opts.free) await runTransaction(ammoRef, (a) => (a || 0) + 1);   // refund
+    if (paced) await set(paceRef, null);                                  // and give the crew its turn back
     throw new Error("Another team fired at " + cellName(r, c) + " first.");
   }
   if (!found) return { hit: false, cell: cellName(r, c) };
@@ -307,7 +368,7 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
     earnedCombat += sinkBonus;
 
     await Promise.all([
-      runTransaction(gameRef(code, `teams/${teamId}/sunkCount`), (n) => (n || 0) + 1),
+      set(gameRef(code, `teams/${teamId}/sunkCount`), increment(1)),
       addFeed(code, `${shooter} sank ${victim}'s ${shipName(game.settings, found.ship.id).toLowerCase()} at ${cellName(r, c)} (+${sinkBonus} pts)`, "sink", teamId),
     ]);
 
@@ -337,8 +398,7 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
     await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}${how} (+${SCORE_RULES.hit} pts)`, "hit", teamId);
   }
 
-  // Update combat score transaction
-  await runTransaction(gameRef(code, `teams/${teamId}/combatScore`), (s) => (s || 0) + earnedCombat);
+  await set(gameRef(code, `teams/${teamId}/combatScore`), increment(earnedCombat));
   return result;
 }
 
@@ -346,26 +406,29 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
 // Returns how many shots were actually added (0 if the magazine is full)
 // question: the question answered, so the teacher can see results by topic
 export async function recordAnswer(code, game, teamId, uid, correct, reward, question = null) {
+  // One update for all the counters, so an answer reaches other devices as a single change.
+  // increment() adds on the server, so teammates answering together can't collide.
   const field = correct ? "correct" : "wrong";
-  await Promise.all([
-    runTransaction(gameRef(code, `players/${uid}/${field}`), (n) => (n || 0) + 1),
-    runTransaction(gameRef(code, `teams/${teamId}/${field}`), (n) => (n || 0) + 1),
-    ...(question ? [runTransaction(gameRef(code, `stats/topics/${topicKey(question.topic)}/${field}`), (n) => (n || 0) + 1)] : []),
-  ]);
-  if (!correct) {
-    await set(gameRef(code, `players/${uid}/streak`), 0);
+  const updates = {
+    [`players/${uid}/${field}`]: increment(1),
+    [`teams/${teamId}/${field}`]: increment(1),
+  };
+  if (question) updates[`stats/topics/${topicKey(question.topic)}/${field}`] = increment(1);
+  if (!correct) updates[`players/${uid}/streak`] = 0;
+  if (!correct || game.phase !== "battle") {
+    await update(gameRef(code), updates);
     return { added: 0, powerup: null };
   }
-  if (game.phase !== "battle") return { added: 0, powerup: null };
 
   // Every right answer scores for the team, whatever the student's job.
   // 1 shot = 10pts, 2 shots = 20pts, 3 shots = 30pts
   const quizPts = (reward === 1 ? SCORE_RULES.quiz.easy : reward === 3 ? SCORE_RULES.quiz.hard : SCORE_RULES.quiz.medium) || 20;
-  const streak = await runTransaction(gameRef(code, `players/${uid}/streak`),
-    (n) => ((n || 0) + 1 >= STREAK_FOR_POWERUP ? 0 : (n || 0) + 1));
-  const streakDone = streak.committed && streak.snapshot.val() === 0;
-  const pts = quizPts + (streakDone ? SCORE_RULES.streak : 0);
-  await runTransaction(gameRef(code, `teams/${teamId}/quizScore`), (s) => (s || 0) + pts);
+  // only this device changes its own streak
+  const streakNow = (((game.players && game.players[uid]) || {}).streak || 0) + 1;
+  const streakDone = streakNow >= STREAK_FOR_POWERUP;
+  updates[`players/${uid}/streak`] = streakDone ? 0 : streakNow;
+  updates[`teams/${teamId}/quizScore`] = increment(quizPts + (streakDone ? SCORE_RULES.streak : 0));
+  await update(gameRef(code), updates);
 
   // With crew roles on, navigators earn sonar and scientists earn airstrikes,
   // at most one every navSecs / sciSecs seconds
@@ -391,9 +454,17 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward, que
   // (not with crew roles: the navigator and scientist earn those)
   if (rolesOn(game)) return { added, powerup: null };
   let powerup = null;
-  if (streakDone) {
+  let earned = streakDone;
+  if (earned && game.settings.powerSecs > 0) {
+    // a big crew hits streaks constantly: limit how often the whole crew can earn one
+    const now = serverNow();
+    const turn = await runTransaction(gameRef(code, `teams/${teamId}/powerReadyAt`),
+      (at) => ((at || 0) > now ? undefined : now + game.settings.powerSecs * 1000));
+    earned = turn.committed;
+  }
+  if (earned) {
     powerup = Math.random() < 0.5 ? "sonar" : "airstrike";
-    await runTransaction(gameRef(code, `teams/${teamId}/powerups/${powerup}`), (n) => (n || 0) + 1);
+    await set(gameRef(code, `teams/${teamId}/powerups/${powerup}`), increment(1));
     const who = (game.players && game.players[uid] && game.players[uid].name) || "Someone";
     await addFeed(code, `${who} earned ${game.teams[teamId].name} a${powerup === "airstrike" ? "n" : ""} ${POWERUPS[powerup].name.toLowerCase()} with ${STREAK_FOR_POWERUP} right in a row`, "power", teamId);
   }
@@ -483,8 +554,12 @@ function nextRoundUpdates(game, roundNum) {
     storm: 0,
     stormNextAt: null,
     winner: null,
+    feed: null,   // every device holds the whole log, so don't let it build up across rounds
   };
   for (const tid of Object.keys(game.teams)) {
+    updates[`teams/${tid}/nextFireAt`] = null;
+    updates[`teams/${tid}/nextTorpedoAt`] = null;
+    updates[`teams/${tid}/powerReadyAt`] = null;
     updates[`teams/${tid}/alive`] = true;
     updates[`teams/${tid}/ready`] = false;
     updates[`teams/${tid}/ammo`] = game.settings.startAmmo ?? 3;
@@ -589,6 +664,7 @@ export async function createGrandFinal(eventId, event, games) {
     stormMins: s.stormMins, zoneSize: s.zoneSize, fleet: s.fleet,
     crewMax: 0, evenTeams: false,
     roles: s.roles, navSecs: s.navSecs, sciSecs: s.sciSecs,
+    fireSecs: s.fireSecs, crewTorpedoSecs: s.crewTorpedoSecs, powerSecs: s.powerSecs,
     questionSet: s.questionSet, customSet: s.questionSet === "custom" ? first.questionSet : null,
     competitionMode: true, roundDurationMins: s.roundDurationMins, totalRounds: 1,
     eventId, division: "final", grandFinal: true,
@@ -599,6 +675,9 @@ export async function createGrandFinal(eventId, event, games) {
   await Promise.all(years.map((y) => update(gameRef(event.divisions[y], "competition"), { finalCode: code })));
   return code;
 }
+
+// Years play in sessions: only the ticked years follow the bulk buttons and show on the hall screen
+export const setPlaying = (id, division, on) => update(eventRef(id, "playing"), { [division]: on ? true : null });
 
 export const setEventWinner = (id, winner) => update(eventRef(id), { winner, status: "finished" });
 

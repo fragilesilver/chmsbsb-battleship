@@ -134,13 +134,23 @@ function openWall(id) {
     // once the Grand Final exists, the hall screen follows it
     if (ev.finalCode) { location.replace(`?code=${ev.finalCode}`); return; }
     $("screen-wall").hidden = false;
+    // only the years in this session are shown, and only their games are downloaded
+    let shown = 0;
     for (const y of YEAR_GROUPS) {
       const code = ev.divisions && ev.divisions[y.id];
-      if (!code || wall.codes[y.id] === code) continue;
+      const playing = code && ev.playing && ev.playing[y.id];
+      if (!playing) {
+        if (wall.codes[y.id]) removeWallCard(y.id);
+        continue;
+      }
+      shown++;
+      if (wall.codes[y.id] === code) continue;
       wall.codes[y.id] = code;
       addWallCard(y, code);
       wall.stops[y.id] = watchGame(code, (g) => { wall.games[y.id] = g; drawWallCard(y.id); });
     }
+    $("wall-empty").hidden = shown > 0;
+    $("screen-wall").classList.toggle("wall-few", shown <= 2);
   });
   setInterval(() => {
     for (const y of Object.keys(wall.games)) {
@@ -152,6 +162,12 @@ function openWall(id) {
       el.classList.toggle("urgent", urgent);
     }
   }, 1000);
+}
+
+function removeWallCard(yearId) {
+  wall.stops[yearId]();
+  $("wall-" + yearId).remove();
+  for (const part of [wall.stops, wall.codes, wall.games, wall.qrDone]) delete part[yearId];
 }
 
 function addWallCard(year, code) {

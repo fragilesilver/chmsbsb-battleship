@@ -4,13 +4,13 @@
 // ============================================================
 import {
   ensureSignedIn, watchEvent, watchGame, setPhase, startBattle, addFeed, finishRound,
-  advanceToNextRound, finaliseDivision, createGrandFinal, setEventWinner, ensureCaptains, claimClockLease,
+  advanceToNextRound, finaliseDivision, createGrandFinal, setEventWinner, ensureCaptains, claimClockLease, setPlaying,
 } from "./firebase.js";
 import { YEAR_GROUPS, getAccumulatedStandings, rolesOn } from "./game.js";
 import { escapeHtml } from "./board.js";
 import { newClock, tickGame, fmtClock } from "./autorun.js";
 import {
-  divisionName, divisionStatus, divisionAction, finalReady, overallWinner,
+  divisionName, divisionStatus, divisionAction, finalReady, overallWinner, isPlaying, sessionDevices,
   topicTable, toCsv, standingsRows, topicRows,
 } from "./tracker.js";
 
@@ -37,6 +37,8 @@ const ACTION_LABEL = {
   finalise: "Finalise and name champion",
 };
 const BULK_ACTIONS = ["placement", "battle", "next-round", "finalise"];
+const DEVICE_LIMIT = 100;   // Firebase's free Spark plan
+const DEVICE_WARNING = 85;  // the dashboard and hall screen use connections too
 
 function showError(text) { $("event-error").textContent = text; }
 
@@ -132,9 +134,16 @@ document.addEventListener("click", (e) => {
     if (act === "end" && !confirm(`End this round for ${divisionName(division)}?`)) return;
     guarded(() => runAction(act, division));
   } else {
-    const targets = Object.keys(state.games).filter((d) => divisionAction(state.games[d]) === act);
+    const targets = Object.keys(state.games).filter((d) => isPlaying(state.event, d) && divisionAction(state.games[d]) === act);
     guarded(() => Promise.all(targets.map((d) => runAction(act, d))));
   }
+});
+
+document.addEventListener("change", (e) => {
+  const box = e.target.closest("[data-playing]");
+  if (!box) return;
+  setPlaying(eventId, box.dataset.playing, box.checked)
+    .catch((err) => showError(err.message || "Couldn't save that. Check the internet connection and try again."));
 });
 
 // ---------------- drawing ----------------
@@ -147,11 +156,20 @@ function render() {
 }
 
 function renderBulk() {
-  const divisions = Object.keys(state.games);
+  const divisions = Object.keys(state.games).filter((d) => isPlaying(state.event, d));
   setHtml($("bulk"), BULK_ACTIONS.map((act) => {
     const count = divisions.filter((d) => divisionAction(state.games[d]) === act).length;
     return count ? `<button class="btn primary" data-act="${act}" ${state.busy ? "disabled" : ""}>${ACTION_LABEL[act]} (${count} ${count === 1 ? "year" : "years"})</button>` : "";
   }).join(""));
+
+  const devices = sessionDevices(state.event, state.games);
+  const crowded = devices >= DEVICE_WARNING;
+  $("session-note").classList.toggle("crowded", crowded);
+  $("session-note").textContent = !divisions.length
+    ? "Tick \"Playing now\" on the years in this session. Their buttons and hall screen panels will appear."
+    : `${devices} device${devices === 1 ? "" : "s"} joined this session.` + (crowded
+      ? ` The free Firebase plan stops at ${DEVICE_LIMIT} connections, counting this dashboard and the hall screen. Ask students to share devices.`
+      : "");
 }
 
 function renderBracket() {
@@ -194,14 +212,16 @@ function renderDivisions() {
     const code = state.codes[d];
     if (!g) return `<article class="division-card"><h3>${divisionName(d)} <small>Code ${escapeHtml(code)}</small></h3><p class="hint">Loading…</p></article>`;
     const players = Object.values(g.players || {});
-    const action = divisionAction(g);
+    const playing = isPlaying(state.event, d);
+    const action = playing ? divisionAction(g) : null;
     const final = d === "final";
-    return `<article class="division-card">
+    return `<article class="division-card ${playing ? "" : "resting"}">
       <div class="dc-head">
         <h3>${divisionName(d)} <small>Code <strong>${escapeHtml(code)}</strong></small></h3>
         <span class="dc-clock" data-clock="${d}">--:--</span>
       </div>
-      <p class="dc-status">${escapeHtml(divisionStatus(g))} · ${players.length} student${players.length === 1 ? "" : "s"}</p>
+      ${final ? "" : `<label class="check playing-now no-print"><input type="checkbox" data-playing="${d}" ${playing ? "checked" : ""} ${g.phase === "battle" ? "disabled" : ""}> Playing now</label>`}
+      <p class="dc-status">${escapeHtml(divisionStatus(g))} · ${players.length} device${players.length === 1 ? "" : "s"}</p>
       <div class="table-wrap">
         <table class="standings-table compact">
           <thead><tr><th>#</th><th>Team</th>${final ? "" : "<th>R1</th><th>R2</th><th>R3</th>"}<th>Total</th><th>Right</th></tr></thead>

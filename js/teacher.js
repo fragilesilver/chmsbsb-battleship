@@ -150,6 +150,12 @@ function showFormat() {
   $("single-setup").hidden = f === "event";
   $("round-duration-row").hidden = f === "casual";
   $("create-btn").textContent = f === "event" ? "Create event" : "Create game";
+  // An event has large class crews of different sizes. A single game keeps its usual small-class rules.
+  const event = f === "event";
+  $("even-teams").checked = !event;
+  $("fire-secs").value = event ? 15 : 0;
+  $("crew-torpedo-secs").value = event ? 60 : 0;
+  $("power-secs").value = event ? 120 : 0;
 }
 $("comp-format").addEventListener("change", showFormat);
 
@@ -237,6 +243,9 @@ function sharedSettings() {
     roles: $("roles-on").checked,
     navSecs: Math.max(5, Math.round(+$("nav-secs").value || 15)),
     sciSecs: Math.max(10, Math.round(+$("sci-secs").value || 90)),
+    fireSecs: Math.max(0, Math.round(+$("fire-secs").value || 0)),
+    crewTorpedoSecs: Math.max(0, Math.round(+$("crew-torpedo-secs").value || 0)),
+    powerSecs: Math.max(0, Math.round(+$("power-secs").value || 0)),
     fleet: readFleet(),
     modes: {
       quiz: $("mode-quiz").checked,
