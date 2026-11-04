@@ -20,15 +20,38 @@
     <section id="screen-setup" class="screen setup">
       <h2>New game</h2>
       <form id="setup-form" autocomplete="off">
-        <label>Number of teams
-          <select id="team-count">
-            <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
-          </select>
-        </label>
-        <fieldset>
-          <legend>Team names</legend>
-          <div id="team-names"></div>
+        <fieldset class="comp-fieldset">
+          <legend>Competition format</legend>
+          <label>Format
+            <select id="comp-format">
+              <option value="event" selected>Whole-school event (Years 7 to 10)</option>
+              <option value="tournament">One game: 3 rounds, then a final</option>
+              <option value="casual">One casual game</option>
+            </select>
+          </label>
+          <label id="round-duration-row">Round length (minutes)
+            <input id="round-duration" type="number" min="3" max="25" value="8">
+          </label>
         </fieldset>
+        <fieldset id="event-setup">
+          <legend>Event</legend>
+          <label>Event name
+            <input id="event-title" maxlength="60" value="CHMS BSB Battle Royale">
+          </label>
+          <p class="hint">Each year plays on its own map with its own game code. Choose "Not playing" for a year that isn't taking part.</p>
+          <div id="event-teams"></div>
+        </fieldset>
+        <div id="single-setup">
+          <label>Number of teams
+            <select id="team-count">
+              <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+            </select>
+          </label>
+          <fieldset>
+            <legend>Team names</legend>
+            <div id="team-names"></div>
+          </fieldset>
+        </div>
         <fieldset>
           <legend>Crew sizes</legend>
           <label class="check"><input type="checkbox" id="even-teams" checked> Keep crews even: a crew can't get more than one student ahead of the others</label>
@@ -45,24 +68,6 @@
             </label>
             <label>Scientist earns an airstrike at most every (seconds)
               <input id="sci-secs" type="number" min="10" max="900" value="90">
-            </label>
-          </div>
-        </fieldset>
-        <fieldset class="comp-fieldset">
-          <legend>CHMS BSB Tournament Settings</legend>
-          <label class="check">
-            <input type="checkbox" id="comp-mode" checked>
-            <strong>Enable Tournament Mode (Best of 3 Rounds + Grand Finals)</strong>
-          </label>
-          <div class="two-col" id="comp-settings">
-            <label>Round duration (minutes, minimum 30 min total across competition)
-              <input id="round-duration" type="number" min="3" max="25" value="8">
-            </label>
-            <label>Tournament format
-              <select id="comp-format">
-                <option value="y7-y10" selected>4 Divisions (Year 7, 8, 9, 10) &rarr; Grand Finals</option>
-                <option value="standard">Open Inter-Class</option>
-              </select>
             </label>
           </div>
         </fieldset>
@@ -111,7 +116,8 @@
             <input id="storm-mins" type="number" min="0" max="30" value="3">
           </label>
         </div>
-        <button class="btn primary" type="submit">Create game</button>
+        <button class="btn primary" type="submit" id="create-btn">Create event</button>
+        <p class="msg" id="create-msg" role="alert"></p>
       </form>
 
       <form id="reopen-form" class="reopen" autocomplete="off">
@@ -121,6 +127,15 @@
           <button class="btn" type="submit">Open</button>
         </div>
         <p class="msg" id="setup-msg" role="alert"></p>
+      </form>
+
+      <form id="reopen-event-form" class="reopen" autocomplete="off">
+        <h3>Reopen an event</h3>
+        <div class="inline">
+          <input id="reopen-event" maxlength="4" placeholder="Event ID" aria-label="Event ID" autocapitalize="characters">
+          <button class="btn" type="submit">Open</button>
+        </div>
+        <p class="msg" id="event-msg" role="alert"></p>
       </form>
     </section>
 
@@ -136,6 +151,7 @@
           <span class="jb-code" id="join-code"></span>
         </div>
         <a class="btn" id="projector-link" target="_blank" rel="noopener">Open projector view</a>
+        <a class="btn" id="event-link" hidden>Back to event dashboard</a>
       </div>
 
       <div class="tourney-bar" id="tourney-bar">
@@ -160,7 +176,7 @@
       <section class="tourney-standings-card" id="tourney-standings-card">
         <div class="tsc-head">
           <h3>🏆 Live Tournament Standings <small>(Accumulated Scores across 3 Rounds)</small></h3>
-          <span class="hint">Top team in Y7, Y8, Y9 &amp; Y10 qualify for Grand Finals</span>
+          <span class="hint">The top team in each year goes through to the Grand Final</span>
         </div>
         <div class="table-wrap" id="standings-table-wrap"></div>
       </section>

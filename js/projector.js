@@ -2,23 +2,31 @@
 //  projector.js  -  the big-screen view for the class TV.
 //  Read-only: shows the ocean without anyone's hidden ships.
 // ============================================================
-import { ensureSignedIn, watchGame, gameExists } from "./firebase.js";
-import { maxStorm, fleetComplete, avatarOf, YEAR_GROUPS, isCompetition, currentRoundNum, isGrandFinal, getAccumulatedStandings } from "./game.js";
+import { ensureSignedIn, watchGame, gameExists, watchEvent } from "./firebase.js";
+import { maxStorm, fleetComplete, avatarOf, YEAR_GROUPS, currentRoundNum, isGrandFinal, getAccumulatedStandings } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { sfx, muteButton } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
 const state = { code: null, game: null, stop: null, feedSeen: null, qrFor: null, view: "ocean" };
-const baseUrl = location.href.replace(/projector\.html.*$/, "");
+const baseUrl = new URL(".", location.href).href;   // works for /projector.html and /projector
 
 muteButton($("mute"));
-document.addEventListener("pointerdown", () => $("sound-hint").remove(), { once: true });
+document.addEventListener("pointerdown", () => $("sound-hint")?.remove(), { once: true });
 
 const params = new URLSearchParams(location.search);
 ensureSignedIn().then(async () => {
+  const eventId = (params.get("event") || "").toUpperCase();
+  if (eventId) return openWall(eventId);
   const code = (params.get("code") || "").toUpperCase();
   if (code && (await gameExists(code))) open(code);
-  else $("screen-code").hidden = false;
+  else {
+    $("screen-code").hidden = false;
+    if (code) $("code-msg").textContent = `No game with code ${code}.`;
+  }
+}).catch(() => {
+  $("screen-code").hidden = false;
+  $("code-msg").textContent = "Couldn't connect to Firebase. Check the internet connection and reload.";
 });
 
 $("code-form").addEventListener("submit", async (e) => {
@@ -46,7 +54,6 @@ function render() {
   if (!g) return;
   playFeedSounds(g);
 
-  const isComp = isCompetition(g);
   const rNum = currentRoundNum(g);
   const isFinal = isGrandFinal(g);
   const comp = g.competition || {};
@@ -57,20 +64,8 @@ function render() {
     if (isFinal) $("proj-stage-badge").classList.add("gold");
   }
 
-  // Update Match Timer
-  if ($("proj-match-timer")) {
-    if (g.competition && g.competition.roundEndsAt && g.phase === "battle") {
-      const leftSecs = Math.max(0, Math.round((g.competition.roundEndsAt - Date.now()) / 1000));
-      const m = Math.floor(leftSecs / 60);
-      const s = String(leftSecs % 60).padStart(2, "0");
-      $("proj-match-timer").textContent = `${m}:${s}`;
-      if (leftSecs <= 60) $("proj-match-timer").classList.add("urgent");
-      else $("proj-match-timer").classList.remove("urgent");
-    } else {
-      $("proj-match-timer").textContent = "--:--";
-      $("proj-match-timer").classList.remove("urgent");
-    }
-  }
+  renderMatchClock(g);
+  $("proj-toggle-view").hidden = g.phase === "lobby" || g.phase === "placement";
 
   $("proj-join").innerHTML = g.phase === "battle" || g.phase === "finished"
     ? `Join at <strong>${escapeHtml(baseUrl.replace(/^https?:\/\//, ""))}</strong> with code <strong>${state.code}</strong>`
@@ -106,6 +101,113 @@ function render() {
         : `<strong>Round ${rNum} Over</strong>`;
     }
   }
+}
+
+function matchClockText(g) {
+  const ends = g.competition && g.competition.roundEndsAt;
+  if (!ends || g.phase !== "battle") return { text: "--:--", urgent: false };
+  const left = Math.max(0, Math.round((ends - Date.now()) / 1000));
+  return { text: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`, urgent: left <= 60 };
+}
+
+function renderMatchClock(g) {
+  const { text, urgent } = matchClockText(g);
+  $("proj-match-timer").textContent = text;
+  $("proj-match-timer").classList.toggle("urgent", urgent);
+}
+
+// ---------------- hall screen: every year of a whole-school event ----------------
+const wall = { games: {}, codes: {}, stops: {}, qrDone: {} };
+
+function openWall(id) {
+  $("proj-toggle-view").hidden = true;
+  $("proj-hud-center").hidden = true;
+  $("proj-stage-badge").textContent = "All years";
+  $("sound-hint")?.remove();
+  watchEvent(id, (ev) => {
+    if (!ev) {
+      $("screen-wall").hidden = true;
+      $("screen-code").hidden = false;
+      $("code-msg").textContent = `No event with ID ${id}.`;
+      return;
+    }
+    // once the Grand Final exists, the hall screen follows it
+    if (ev.finalCode) { location.replace(`?code=${ev.finalCode}`); return; }
+    $("screen-wall").hidden = false;
+    for (const y of YEAR_GROUPS) {
+      const code = ev.divisions && ev.divisions[y.id];
+      if (!code || wall.codes[y.id] === code) continue;
+      wall.codes[y.id] = code;
+      addWallCard(y, code);
+      wall.stops[y.id] = watchGame(code, (g) => { wall.games[y.id] = g; drawWallCard(y.id); });
+    }
+  });
+  setInterval(() => {
+    for (const y of Object.keys(wall.games)) {
+      const g = wall.games[y];
+      const el = document.querySelector(`[data-wall-clock="${y}"]`);
+      if (!g || !el) continue;
+      const { text, urgent } = matchClockText(g);
+      el.textContent = text;
+      el.classList.toggle("urgent", urgent);
+    }
+  }, 1000);
+}
+
+function addWallCard(year, code) {
+  const card = document.createElement("article");
+  card.className = "wall-card";
+  card.id = "wall-" + year.id;
+  card.style.setProperty("--tc", year.color);
+  card.innerHTML = `
+    <header class="wall-head">
+      <h2>${year.name}</h2>
+      <span class="wall-status" data-wall-status></span>
+      <span class="wall-clock" data-wall-clock="${year.id}">--:--</span>
+    </header>
+    <div class="wall-join" data-wall-join>
+      <div class="wall-qr" data-wall-qr aria-hidden="true"></div>
+      <div>
+        <p class="wall-code">${escapeHtml(code)}</p>
+        <p class="wall-url">${escapeHtml(baseUrl.replace(/^https?:\/\//, ""))}</p>
+        <p class="wall-count" data-wall-count></p>
+      </div>
+    </div>
+    <div class="wall-body" data-wall-body hidden>
+      <div class="chart-wrap wall-map"><div data-wall-ocean></div></div>
+      <ol class="wall-teams" data-wall-teams></ol>
+    </div>`;
+  $("screen-wall").append(card);
+}
+
+function drawWallCard(yearId) {
+  const g = wall.games[yearId];
+  const card = $("wall-" + yearId);
+  if (!g || !card) return;
+  const part = (name) => card.querySelector(`[data-wall-${name}]`);
+  const round = (g.competition && g.competition.currentRound) || 1;
+  const phaseText = { lobby: "Crews joining", placement: "Placing fleets", battle: "In battle", finished: "Round over" }[g.phase] || "";
+  part("status").textContent = g.competition && g.competition.stage === "complete" ? "Complete" : `Round ${round} of 3 · ${phaseText}`;
+
+  const joining = g.phase === "lobby";
+  part("join").hidden = !joining;
+  part("body").hidden = joining;
+  if (joining) {
+    const players = Object.keys(g.players || {}).length;
+    part("count").textContent = `${players} sailor${players === 1 ? "" : "s"} aboard`;
+    if (!wall.qrDone[yearId] && window.QRCode) {
+      new window.QRCode(part("qr"), { text: `${baseUrl}?code=${wall.codes[yearId]}`, width: 150, height: 150, colorDark: "#14324a", colorLight: "#f7fafb" });
+      wall.qrDone[yearId] = true;
+    }
+    return;
+  }
+  renderOcean(part("ocean"), g, { revealAll: g.phase === "finished" });
+  part("teams").innerHTML = getAccumulatedStandings(g).map((s) =>
+    `<li class="${s.alive ? "" : "out"}" style="--tc:${s.color}">
+      <span class="pennant" aria-hidden="true"></span>
+      <span class="wt-name">${escapeHtml(s.name)}</span>
+      <strong class="wt-pts">${s.totalScore}</strong>
+    </li>`).join("");
 }
 
 function renderProjectorStandings(g) {
@@ -203,7 +305,11 @@ function renderStorm(g) {
   el.innerHTML = `<span class="ps-level">${lvl ? `Storm ${lvl} of ${max}` : "Storm arrives"}</span>` +
     (t ? `<span class="ps-time">${lvl ? "closes in again in " : "in "}${t}</span>` : "");
 }
-setInterval(() => { if (state.game) renderStorm(state.game); }, 1000);
+setInterval(() => {
+  if (!state.game) return;
+  renderStorm(state.game);
+  renderMatchClock(state.game);
+}, 1000);
 
 // Play a sound for each new event in the battle log
 function playFeedSounds(g) {

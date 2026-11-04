@@ -1,8 +1,8 @@
 # Player's Guide: Battleship Royale
 
-Your crew shares one fleet on a big shared ocean with every other team. Earn shots by solving pseudocode problems, hunt down the other fleets, and be the **last crew with a ship afloat**.
+Your crew shares one fleet on a big shared ocean with every other team. Earn shots by answering questions, hunt down the other fleets, and be the **last crew with a ship afloat**.
 
-New to pseudocode? Read the [Pseudocode Lesson](PSEUDOCODE_LESSON.md). It teaches everything the Earn shots, Torpedo and Code tabs use.
+Playing a pseudocode set? Read the [Pseudocode Lesson](PSEUDOCODE_LESSON.md). It teaches everything the Earn shots, Torpedo and Code tabs use in that set.
 
 ---
 
@@ -123,7 +123,7 @@ You can't fire at your own waters, or at a square that's already been hit by any
 
 ### Earn shots tab: answer questions
 
-Answer multiple-choice questions to earn shots for your crew. Your teacher picks the question set, so the questions depend on the lesson. The *Computer Science 2210 Revision (Ch 1-6)* set covers data representation, data transmission, hardware, software, the internet, and automated and emerging technologies. The notes below describe the pseudocode set. With a revision set there are no generated trace questions, and torpedoes use typed answers instead of code puzzles.
+Answer multiple-choice questions to earn shots for your crew. Your teacher picks the question set, so the questions depend on the lesson. The *General ICT* set is the default for competitions. It covers hardware, software, files, documents, spreadsheets, databases, networks and online safety, and harder questions earn more shots. In a whole-school event, younger years see more easy questions and older years see more hard ones. The *Computer Science 2210 Revision (Ch 1-6)* set covers data representation, data transmission, hardware, software, the internet, and automated and emerging technologies. The notes below describe the pseudocode set. With a revision set there are no generated trace questions, and torpedoes use typed answers instead of code puzzles.
 
 In the pseudocode set, about half come from the question bank (data types, loops, validation, test data, searching and sorting, and more). The other half are **brand-new trace questions made up on the spot**, so you'll rarely see the same one twice:
 
@@ -223,6 +223,8 @@ As the battle goes on, a **storm** closes in from the **edges of the ocean**, on
 - A ship **sinks** when every one of its squares has been hit.
 - A crew is **knocked out** when all of its ships have sunk. Its waters turn grey.
 - The **last crew with a ship afloat wins.** Your teacher can also end the game at any time.
+- In a tournament, a round also ends when the match clock runs out. The surviving crew with the highest round score wins that round.
+- In a whole-school event, your year plays 3 rounds and the points add up. The top crew in each year gets a **Join the Grand Final** button after Round 3.
 
 If your fleet is sunk, keep watching. The chart keeps updating until the end. When the game is over, every ship is revealed. Press **Join a new game** to play again.
 

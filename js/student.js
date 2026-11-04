@@ -12,6 +12,7 @@ import {
   POWERUPS, airstrikeCells, sonarCells, maxStorm, crewBlock, torpedoTargets,
   ROLES, JOBS, rolesOn, crewOf, captainOf, roleOf, jobsOf, earnKind,
   YEAR_GROUPS, isCompetition, currentRoundNum, isGrandFinal, getAccumulatedStandings,
+  levelWeightsFor, pickLevel,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { setForGame, modeAllowed, isTyped, checkTyped } from "./qsets.js";
@@ -189,6 +190,11 @@ function watchEvents(g, teamId) {
   // If we transitioned to a new round placement/battle, reset won trigger
   if ((g.phase === "placement" || g.phase === "battle") && seen.won) {
     seen.won = false;
+  }
+  // A new round starts with an empty ocean, so the same squares can be hit again
+  if (!Object.keys(shots).length) {
+    seen.shots.clear();
+    seen.storm = g.storm || 0;
   }
   for (const [k, shot] of Object.entries(shots)) {
     if (seen.shots.has(k)) continue;
@@ -741,6 +747,10 @@ function nextQuestion() {
     const all = set.questions.filter((x) => !isTyped(x));
     let pool = all.filter((x) => !seenQuestions.has(x.id));
     if (!pool.length) { seenQuestions.clear(); pool = all; }
+    // in a whole-school event, each year gets a mix of levels that suits it
+    const weights = levelWeightsFor(state.game, state.game && state.game.players && state.game.players[state.uid] && state.game.players[state.uid].team);
+    const level = weights && pickLevel(weights, [...new Set(pool.map((x) => x.level))]);
+    if (level) pool = pool.filter((x) => x.level === level);
     q = pool[Math.floor(Math.random() * pool.length)];
     seenQuestions.add(q.id);
   }
@@ -802,7 +812,7 @@ async function answerQuestion(g, teamId, opt) {
     Q.note = "";
     renderQuiz(g);
     sfx.correct();
-    const { added, powerup, readyAt } = await recordAnswer(state.code, g, teamId, state.uid, true, rewardFor(Q.q));
+    const { added, powerup, readyAt } = await recordAnswer(state.code, g, teamId, state.uid, true, rewardFor(Q.q), Q.q);
     const kind = earnKind(g, state.uid);
     if (kind !== "shots") {
       // navigator / scientist: one power-up, then a wait before the next can be earned
@@ -822,7 +832,7 @@ async function answerQuestion(g, teamId, opt) {
     Q.lockUntil = Date.now() + 10000;
     Q.note = t("q_wrong");
     sfx.wrong();
-    recordAnswer(state.code, g, teamId, state.uid, false, 0);
+    recordAnswer(state.code, g, teamId, state.uid, false, 0, Q.q);
   }
   if (battle.tab === "quiz") renderQuiz(g);
 }
@@ -1132,16 +1142,35 @@ function renderFinished(g, teamId) {
     </div>`;
   }
 
+  // A whole-school event: the year champions move on to a separate final game
+  const comp = g.competition || {};
+  const inEvent = !!(g.settings && g.settings.eventId);
+  const finalCode = !isFinal && comp.champion === teamId && comp.finalCode;
+  const nextStep = finalCode
+    ? `<button class="btn primary wide" data-action="join-final">🏆 Join the Grand Final</button>`
+    : inEvent && !isFinal
+      ? `<p class="hint">${comp.champion ? "Well played! Watch the Grand Final on the big screen." : rNum < 3 ? `Keep your device ready for Round ${rNum + 1}.` : "Your teacher is confirming the results. Keep this page open."}</p>`
+      : isComp && rNum < 3
+        ? `<p class="hint">Keep your devices ready for Round ${rNum + 1}.</p>`
+        : `<button class="btn primary wide" data-action="leave">Join a new game</button>`;
+
   $("panel").innerHTML = `
     ${bannerHtml}
     ${standingsHtml}
-    ${isComp && rNum < 3 ? '<p class="hint">Keep your devices ready for Round ' + (rNum + 1) + '.</p>' : '<button class="btn primary wide" data-action="leave">Join a new game</button>'}
+    ${nextStep}
     <h3>Teams</h3><ul class="teams" id="teams"></ul>
     <h3>Battle log</h3><ol class="feed" id="feed"></ol>`;
 
   renderTeams($("teams"), g, teamId);
   renderFeed($("feed"), g);
-  $("panel").onclick = (e) => { if (e.target.closest('[data-action="leave"]')) leaveGame(); };
+  $("panel").onclick = (e) => {
+    if (e.target.closest('[data-action="leave"]')) leaveGame();
+    if (e.target.closest('[data-action="join-final"]')) {
+      const name = g.players[state.uid].name;
+      leaveGame();
+      tryJoin(finalCode, name, false);
+    }
+  };
 }
 
 // ---------------- toast ----------------

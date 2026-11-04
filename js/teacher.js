@@ -5,8 +5,10 @@ import {
   ensureSignedIn, createGame, watchGame, gameExists, setPhase,
   startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
   advanceStorm, setStormNextAt, givePowerups, ensureCaptains,
-  advanceToNextRound, startGrandFinal, setRoundEndsAt,
+  advanceToNextRound, startGrandFinal, setRoundEndsAt, finishRound,
+  createEvent, eventExists, finaliseDivision,
 } from "./firebase.js";
+import { newClock, tickGame, closeStorm, fmtClock as fmt } from "./autorun.js";
 import {
   TEAM_PRESETS, fleetComplete, maxStorm, ZONE, ZONE_SIZES, SHIP_TYPES, DEFAULT_FLEET, MAX_PER_TYPE,
   gridSize, colLabel, fleetFor, randomFleet, zoneFor, avatarOf,
@@ -22,7 +24,12 @@ const store = {
   set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } },
 };
 
-const state = { code: null, game: null, stop: null, autoReload: true, nextReload: 0, timer: null, qset: null, qsetKey: "" };
+const state = { code: null, game: null, stop: null, clock: newClock(), timer: null, qset: null, qsetKey: "" };
+
+// Links work however the page was opened: /teacher.html, /teacher or with extras on the end
+const pageUrl = (page) => new URL(page, location.href).href;
+// A game in a whole-school event has its clocks run by the event dashboard
+const eventIdOf = (g) => (g && g.settings && g.settings.eventId) || null;
 
 // ---------------- question set picker ----------------
 // `chosen` is the set the form will create the game with (built-in or uploaded)
@@ -135,22 +142,91 @@ const showRoleTimes = () => { $("role-times").hidden = !$("roles-on").checked; }
 $("roles-on").addEventListener("change", showRoleTimes);
 showRoleTimes();
 
+// ---------------- competition format ----------------
+const formatOf = () => $("comp-format").value;
+function showFormat() {
+  const f = formatOf();
+  $("event-setup").hidden = f !== "event";
+  $("single-setup").hidden = f === "event";
+  $("round-duration-row").hidden = f === "casual";
+  $("create-btn").textContent = f === "event" ? "Create event" : "Create game";
+}
+$("comp-format").addEventListener("change", showFormat);
+
+// One row per year: how many teams, and their names. Typed names survive changing the count.
+const eventNames = Object.fromEntries(YEAR_GROUPS.map((y) => [y.id, []]));
+$("event-teams").innerHTML = YEAR_GROUPS.map((y) => `
+  <div class="event-year" data-year="${y.id}">
+    <label>${y.name}
+      <select class="event-count" aria-label="${y.name} number of teams">
+        <option value="0">Not playing</option>
+        ${[2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${n === 4 ? "selected" : ""}>${n} teams</option>`).join("")}
+      </select>
+    </label>
+    <div class="event-names"></div>
+  </div>`).join("");
+
+function drawEventNames(row) {
+  const year = row.dataset.year;
+  const label = YEAR_GROUPS.find((y) => y.id === year).name;
+  const names = eventNames[year];
+  row.querySelectorAll(".event-names input").forEach((input, i) => { names[i] = input.value; });
+  const n = +row.querySelector(".event-count").value;
+  row.querySelector(".event-names").innerHTML = TEAM_PRESETS.slice(0, n).map((t, i) =>
+    `<label class="name-row" style="--tc:${t.color}"><span class="pennant"></span>
+      <input maxlength="24" value="${escapeHtml(names[i] ?? `${label} Team ${i + 1}`)}" aria-label="${label} team ${i + 1} name"></label>`).join("");
+}
+document.querySelectorAll(".event-year").forEach((row) => {
+  drawEventNames(row);
+  row.querySelector(".event-count").addEventListener("change", () => drawEventNames(row));
+});
+showFormat();
+
+const readDivisions = () => [...document.querySelectorAll(".event-year")]
+  .map((row) => ({
+    id: row.dataset.year,
+    teamNames: [...row.querySelectorAll(".event-names input")].map((i, n) => i.value.trim() || `Team ${n + 1}`),
+  }))
+  .filter((d) => d.teamNames.length >= 2);
+
 const ready = ensureSignedIn().catch(() => { $("setup-msg").textContent = "Couldn't connect to Firebase. Check the internet connection."; });
 
 $("setup-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  $("create-msg").textContent = "";
   const err = checkMapAndFleet();
   if (err) { $("fleet-sum").scrollIntoView({ block: "center" }); return; }
   if (!chosen.set) { $("qset-info").scrollIntoView({ block: "center" }); return; }
-  await ready;
-  const teamYears = [...document.querySelectorAll("#team-names .team-year")].map((s) => s.value);
-  const isComp = $("comp-mode") ? $("comp-mode").checked : true;
-  const roundMins = $("round-duration") ? Math.max(3, Math.round(+$("round-duration").value || 8)) : 8;
+  const format = formatOf();
+  const divisions = readDivisions();
+  if (format === "event" && !divisions.length) { $("create-msg").textContent = "Choose teams for at least one year."; return; }
+  $("create-btn").disabled = true;
+  try {
+    await ready;
+    if (format === "event") {
+      const id = await createEvent($("event-title").value.trim() || "CHMS BSB Battle Royale", divisions, sharedSettings());
+      store.set("bs_teacher_event", id);
+      location.href = pageUrl("event.html?id=" + id);
+      return;
+    }
+    const code = await createGame({
+      ...sharedSettings(),
+      teamCount: +$("team-count").value,
+      teamNames: [...document.querySelectorAll("#team-names input")].map((i) => i.value.trim()),
+      teamYears: [...document.querySelectorAll("#team-names .team-year")].map((s) => s.value),
+      competitionMode: format === "tournament",
+    });
+    openGame(code);
+  } catch (ex) {
+    $("create-msg").textContent = ex.message || "Couldn't create that. Check the internet connection and try again.";
+  } finally {
+    $("create-btn").disabled = false;
+  }
+});
 
-  const code = await createGame({
-    teamCount: +$("team-count").value,
-    teamNames: [...document.querySelectorAll("#team-names input")].map((i) => i.value.trim()),
-    teamYears,
+// The form choices every format shares
+function sharedSettings() {
+  return {
     startAmmo: +$("start-ammo").value,
     reloadSecs: +$("reload-secs").value,
     torpedoSecs: +$("torpedo-secs").value,
@@ -169,12 +245,10 @@ $("setup-form").addEventListener("submit", async (e) => {
     },
     questionSet: chosen.custom ? "custom" : chosen.set.id,
     customSet: chosen.custom ? chosen.set : null,
-    competitionMode: isComp,
-    roundDurationMins: roundMins,
+    roundDurationMins: Math.max(3, Math.round(+$("round-duration").value || 8)),
     totalRounds: 3,
-  });
-  openGame(code);
-});
+  };
+}
 
 $("reopen-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -184,7 +258,27 @@ $("reopen-form").addEventListener("submit", async (e) => {
   else $("setup-msg").textContent = `No game with code ${code}.`;
 });
 
+$("reopen-event-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await ready;
+  const id = $("reopen-event").value.trim().toUpperCase();
+  try {
+    if (await eventExists(id)) location.href = pageUrl("event.html?id=" + id);
+    else $("event-msg").textContent = `No event with ID ${id}.`;
+  } catch (ex) { $("event-msg").textContent = ex.message; }
+});
+
 $("reopen-code").value = store.get("bs_teacher_code") || "";
+$("reopen-event").value = store.get("bs_teacher_event") || "";
+
+// The event dashboard links straight to a control room with ?code=XXXX
+const urlCode = (new URLSearchParams(location.search).get("code") || "").trim().toUpperCase();
+if (urlCode) {
+  ready.then(async () => {
+    if (await gameExists(urlCode)) openGame(urlCode);
+    else $("setup-msg").textContent = `No game with code ${urlCode}.`;
+  });
+}
 
 function openGame(code) {
   state.code = code;
@@ -192,17 +286,41 @@ function openGame(code) {
   $("screen-setup").hidden = true;
   $("screen-control").hidden = false;
   $("join-code").textContent = code;
-  $("join-url").textContent = location.href.replace(/teacher\.html.*$/, "");
-  $("projector-link").href = location.href.replace(/teacher\.html.*$/, "") + "projector.html?code=" + code;
+  $("join-url").textContent = pageUrl(".");
+  $("projector-link").href = pageUrl("projector.html?code=" + code);
+  if (new URLSearchParams(location.search).get("code") !== code) history.replaceState(null, "", "?code=" + code);
+  state.clock = newClock();
   if (state.stop) state.stop();
   state.stop = watchGame(code, async (g) => {
     if (g) {
       const key = g.questionSet ? "custom:" + (g.questionSet.id || "") + (g.questionSet.questions || []).length : (g.settings && g.settings.questionSet) || "";
       if (!state.qset || key !== state.qsetKey) { state.qset = await setForGame(g); state.qsetKey = key; }
     }
-    state.game = g; render(); pickCaptains(g);
+    state.game = g;
+    render();
+    if (g && !eventIdOf(g)) pickCaptains(g);
   });
   startReloadClock();
+}
+
+// With crew roles on, this tab picks a random captain for each crew and fills empty jobs
+let captainsBusy = false;
+async function pickCaptains(g) {
+  if (captainsBusy || !rolesOn(g)) return;
+  captainsBusy = true;
+  try { await ensureCaptains(state.code, g); } finally { captainsBusy = false; }
+}
+
+function stormControls(g) {
+  const lvl = g.storm || 0, max = maxStorm(g.settings);
+  const auto = g.settings.stormMins > 0;
+  const next = g.stormNextAt ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
+  return `<div class="btn-row storm-row">
+      <span class="storm-level">Storm ${lvl} of ${max}</span>
+      <button class="btn" data-action="storm" ${lvl >= max ? "disabled" : ""}>Close the storm in now</button>
+      ${auto && lvl < max ? `<button class="btn ${g.stormNextAt ? "on" : ""}" data-action="storm-auto" aria-pressed="${!!g.stormNextAt}">
+        Auto storm: ${g.stormNextAt ? `on, next in <span id="storm-left">${fmt(next)}</span>` : "paused"}</button>` : ""}
+    </div>`;
 }
 
 // ---------------- control room ----------------
@@ -277,7 +395,12 @@ function render() {
   const teamIdsList = Object.keys(g.teams);
   const readyCount = teamIdsList.filter((id) => g.teams[id].ready && fleetComplete(g.fleets && g.fleets[id], g.settings)).length;
   const players = Object.values(g.players || {});
-  const secsLeft = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));
+  const clock = state.clock;
+  const secsLeft = Math.max(0, Math.ceil((clock.nextReload - Date.now()) / 1000));
+  const eventId = eventIdOf(g);
+
+  $("event-link").hidden = !eventId;
+  if (eventId) $("event-link").href = pageUrl("event.html?id=" + eventId);
 
   let html = "";
   if (g.phase === "lobby") {
@@ -288,29 +411,39 @@ function render() {
       <button class="btn primary" data-action="battle">Start battle</button>
       <button class="btn" data-action="lobby">Back to lobby</button>`;
   } else if (g.phase === "battle") {
-    const hasTimer = g.settings.reloadSecs > 0;
+    const hasTimer = g.settings.reloadSecs > 0 && !eventId;
     html = `<div class="btn-row">
         <button class="btn" data-action="ammo1">Give every team +1 shot</button>
         <button class="btn" data-action="ammo3">+3 shots</button>
-        ${hasTimer ? `<button class="btn ${state.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${state.autoReload}">
-          Free shots: ${state.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>` : ""}
+        ${hasTimer ? `<button class="btn ${clock.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${clock.autoReload}">
+          Free shots: ${clock.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>` : ""}
         <button class="btn" data-action="supply">Supply drop: sonar + airstrike for all</button>
         <button class="btn danger" data-action="end">End round now</button>
       </div>
-      ${stormControls(g)}`;
+      ${stormControls(g)}
+      ${eventId ? `<p class="hint">Free shots, the storm and the round clock are run by the event dashboard. Keep it open and visible.</p>` : ""}`;
   } else {
     const w = g.winner && g.teams[g.winner];
     if (isComp) {
-      if (isFinal) {
-        html = `<p class="big">🏆 ${w ? `<strong>${escapeHtml(w.name)}</strong> crowned CHMS BSB Ultimate Champion!` : "Grand Finals concluded!"}</p>
+      if (eventId && !isFinal && comp.stage === "complete") {
+        const champ = comp.champion && g.teams[comp.champion];
+        html = `<p class="big">🏆 ${champ ? `${escapeHtml(champ.name)} are the ${escapeHtml(g.settings.division)} champions!` : "Division complete."}</p>
+          <p class="hint">Create the Grand Final from the event dashboard once every year has finished.</p>`;
+      } else if (eventId && !isFinal && rNum >= 3) {
+        html = `<p class="big">${w ? `${escapeHtml(w.name)} won Round 3.` : "Round 3 concluded."} All three rounds are played.</p>
           <div class="btn-row">
-            <button class="btn primary" data-action="new">Set up a new tournament</button>
+            <button class="btn primary" data-action="finalise">Finalise division and name the champion</button>
           </div>`;
+      } else if (isFinal) {
+        html = `<p class="big">🏆 ${w ? `<strong>${escapeHtml(w.name)}</strong> crowned CHMS BSB Ultimate Champion!` : "Grand Finals concluded!"}</p>
+          ${eventId ? "" : `<div class="btn-row">
+            <button class="btn primary" data-action="new">Set up a new tournament</button>
+          </div>`}`;
       } else if (rNum < 3) {
         html = `<p class="big">${w ? `${escapeHtml(w.name)} won Round ${rNum}!` : `Round ${rNum} concluded.`} Scores have been accumulated.</p>
           <div class="btn-row">
             <button class="btn primary" data-action="next-round">Start Round ${rNum + 1} of 3 (Keep Crews)</button>
-            <button class="btn" data-action="new">Set up a new tournament</button>
+            ${eventId ? "" : `<button class="btn" data-action="new">Set up a new tournament</button>`}
           </div>`;
       } else {
         html = `<p class="big">Preliminaries complete! Best of 3 scores calculated. The 4 Year Champions are ready for the ultimate title.</p>
@@ -357,67 +490,49 @@ async function onControl(e) {
   if (!act) return;
   if (act === "placement") { await setPhase(state.code, "placement"); await addFeed(state.code, "Fleet placement is open.", "info"); }
   if (act === "lobby") await setPhase(state.code, "lobby");
-  if (act === "battle") { await startBattle(state.code, g); state.nextReload = Date.now() + g.settings.reloadSecs * 1000; }
+  if (act === "battle") { await startBattle(state.code, g); state.clock.nextReload = Date.now() + g.settings.reloadSecs * 1000; }
   if (act === "ammo1") { await giveAmmo(state.code, g, 1); toast("Every team got +1 shot."); }
   if (act === "ammo3") { await giveAmmo(state.code, g, 3); toast("Every team got +3 shots."); }
-  if (act === "reload") { state.autoReload = !state.autoReload; state.nextReload = Date.now() + g.settings.reloadSecs * 1000; render(); }
+  if (act === "reload") { state.clock.autoReload = !state.clock.autoReload; state.clock.nextReload = Date.now() + g.settings.reloadSecs * 1000; render(); }
   if (act === "mode") {
     const k = e.target.closest("[data-mode]").dataset.mode;
     await setMode(state.code, k, !modesOf(g)[k]);
   }
   if (act === "supply") { await givePowerups(state.code, g); toast("Supply drop sent."); }
   if (act === "storm") {
-    await advanceStorm(state.code, g);
-    const max = maxStorm(g.settings);
-    if (g.stormNextAt) await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
+    if (g.stormNextAt) await closeStorm(state.code, g);
+    else await advanceStorm(state.code, g);
   }
   if (act === "storm-auto") await setStormNextAt(state.code, g.stormNextAt ? null : Date.now() + g.settings.stormMins * 60000);
-  if (act === "end" && confirm("End the game for everyone?")) await endGame(state.code);
-  if (act === "new") location.reload();
+  if (act === "end" && confirm("End this round for everyone?")) {
+    if (isCompetition(g)) await finishRound(state.code, "The teacher ended the round.");
+    else await endGame(state.code);
+  }
+  if (act === "next-round") { await advanceToNextRound(state.code, g); toast("Fleet placement is open for the next round."); }
+  if (act === "grand-final" && confirm("Launch the Grand Finals? Round 3 scores will be locked in.")) await startGrandFinal(state.code, g);
+  if (act === "finalise" && confirm("Lock in the scores and name the champion for this year?")) await finaliseDivision(state.code, g);
+  if (act === "new") location.href = pageUrl("teacher.html");
 }
 
-// Free shots are handed out by this tab, so keep it open during the battle
-let stormBusy = false;
-async function stormTick(g) {
-  if (g.phase !== "battle" || !g.stormNextAt || stormBusy) return;
-  const span = $("storm-left");
-  if (span) span.textContent = fmt(Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)));
-  if (Date.now() < g.stormNextAt) return;
-  stormBusy = true;
-  try {
-    await advanceStorm(state.code, g);
-    const max = maxStorm(g.settings);
-    await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
-  } finally { stormBusy = false; }
-}
-
+// Free shots, the storm and the round clock run from this tab, so keep it open during
+// the battle. In a whole-school event the dashboard does this job instead.
 function startReloadClock() {
   clearInterval(state.timer);
-  state.timer = setInterval(async () => {
+  state.timer = setInterval(() => {
     const g = state.game;
-    if (g) {
-      stormTick(g);
-      if (g.competition && g.competition.roundEndsAt && $("tb-timer")) {
-        const leftSecs = Math.max(0, Math.round((g.competition.roundEndsAt - Date.now()) / 1000));
-        $("tb-timer").textContent = fmt(leftSecs);
-        if (leftSecs === 0 && g.phase === "battle") {
-          $("tb-timer").classList.add("expired");
-        } else {
-          $("tb-timer").classList.remove("expired");
-        }
-      } else if ($("tb-timer")) {
-        $("tb-timer").textContent = "--:--";
-      }
-    }
-    if (!g || g.phase !== "battle" || !state.autoReload || !(g.settings.reloadSecs > 0)) return;
-    if (!state.nextReload) state.nextReload = Date.now() + g.settings.reloadSecs * 1000;
-    const left = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));
-    const span = $("reload-left");
-    if (span) span.textContent = left;
-    if (Date.now() >= state.nextReload) {
-      state.nextReload = Date.now() + g.settings.reloadSecs * 1000;
-      await giveAmmo(state.code, g, 1);
-    }
+    if (!g) return;
+    const ends = g.competition && g.competition.roundEndsAt;
+    const leftSecs = ends ? Math.max(0, Math.round((ends - Date.now()) / 1000)) : null;
+    $("tb-timer").textContent = leftSecs === null ? "--:--" : fmt(leftSecs);
+    $("tb-timer").classList.toggle("expired", leftSecs === 0 && g.phase === "battle");
+
+    const stormSpan = $("storm-left");
+    if (stormSpan && g.stormNextAt) stormSpan.textContent = fmt(Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)));
+
+    if (eventIdOf(g)) return;
+    tickGame(state.code, g, state.clock);
+    const reloadSpan = $("reload-left");
+    if (reloadSpan) reloadSpan.textContent = Math.max(0, Math.ceil((state.clock.nextReload - Date.now()) / 1000));
   }, 1000);
 }
 

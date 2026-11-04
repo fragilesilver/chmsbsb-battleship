@@ -331,6 +331,81 @@ export const isCompetition = (g) => !!(g && g.settings && g.settings.competition
 export const currentRoundNum = (g) => (g && g.competition && g.competition.currentRound) || 1;
 export const isGrandFinal = (g) => !!(g && g.competition && (g.competition.stage === "finals" || g.competition.currentRound === "final"));
 
+export const roundScoreOf = (t) => (t.combatScore || 0) + (t.quizScore || 0) + (t.placementScore || 0);
+
+// What gets stored for each team when a round is locked in
+export function roundSnapshot(game) {
+  const out = {};
+  for (const [id, t] of Object.entries(game.teams || {})) {
+    out[id] = {
+      combat: t.combatScore || 0,
+      quiz: t.quizScore || 0,
+      placement: t.placementScore || 0,
+      total: roundScoreOf(t),
+      alive: !!t.alive,
+      sunkCount: t.sunkCount || 0,
+      correct: t.correct || 0,
+      wrong: t.wrong || 0,
+    };
+  }
+  return out;
+}
+
+// A round stopped with several fleets still afloat (clock ran out, or the teacher
+// ended it). Survivors are ranked by round score, then ships afloat, and take the
+// top placement points. Eliminated teams already got theirs when they went out.
+export function survivorPlacements(game) {
+  const shots = game.shots || {};
+  const ranked = Object.entries(game.teams || {})
+    .filter(([, t]) => t.alive)
+    .map(([id, t]) => ({
+      id,
+      score: roundScoreOf(t),
+      afloat: game.fleets && game.fleets[id] ? shipsAfloat(game.fleets[id], shots) : 0,
+    }))
+    .sort((a, b) => (b.score - a.score) || (b.afloat - a.afloat) || (teamIndex(a.id) - teamIndex(b.id)));
+  const places = SCORE_RULES.placement;
+  const points = {};
+  ranked.forEach((r, i) => { points[r.id] = places[Math.min(i, places.length - 1)]; });
+  return { winnerId: ranked.length ? ranked[0].id : null, points };
+}
+
+// ---------------- question difficulty by year ----------------
+// Younger years see more easy questions. Everyone still gets a mix of all three.
+export const LEVEL_WEIGHTS = {
+  Y7: { easy: 60, medium: 30, hard: 10 },
+  Y8: { easy: 50, medium: 35, hard: 15 },
+  Y9: { easy: 35, medium: 40, hard: 25 },
+  Y10: { easy: 25, medium: 40, hard: 35 },
+  final: { easy: 34, medium: 33, hard: 33 },
+};
+
+// Which weighting a question should use in this game (null = no weighting)
+export function levelWeightsFor(game, teamId) {
+  if (!game || !game.settings || !game.settings.eventId) return null;
+  if (isGrandFinal(game)) return LEVEL_WEIGHTS.final;
+  const year = game.settings.division || (game.teams && game.teams[teamId] && game.teams[teamId].year);
+  return LEVEL_WEIGHTS[year] || null;
+}
+
+// Pick a level by weight, using only the levels this pool still has.
+// roll is a number from 0 up to 1 (Math.random() unless testing).
+export function pickLevel(weights, available, roll = Math.random()) {
+  const usable = Object.keys(weights).filter((k) => available.includes(k) && weights[k] > 0);
+  if (!usable.length) return null;
+  const total = usable.reduce((sum, k) => sum + weights[k], 0);
+  let left = roll * total;
+  for (const k of usable) {
+    left -= weights[k];
+    if (left < 0) return k;
+  }
+  return usable[usable.length - 1];
+}
+
+// A topic name made safe to use as a Firebase key
+export const topicKey = (topic) =>
+  (String(topic || "General").replace(/[.$#[\]/\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim() || "General").slice(0, 80);
+
 // Standings across rounds (Best of 3 + current round)
 export function getAccumulatedStandings(g) {
   if (!g || !g.teams) return [];
@@ -370,7 +445,7 @@ export function getAccumulatedStandings(g) {
       r1: (pastRounds["1"] && pastRounds["1"][id] && pastRounds["1"][id].total) || (roundNum === 1 ? curTotal : 0),
       r2: (pastRounds["2"] && pastRounds["2"][id] && pastRounds["2"][id].total) || (roundNum === 2 ? curTotal : 0),
       r3: (pastRounds["3"] && pastRounds["3"][id] && pastRounds["3"][id].total) || (roundNum === 3 ? curTotal : 0),
-      liveRoundScore: curTotal,
+      liveRoundScore,
       totalScore,
       correct,
       wrong,

@@ -12,8 +12,10 @@ import {
   maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
   ZONE, DEFAULT_FLEET, avatarOf, shipName, crewBlock,
   rolesOn, crewOf, captainOf, roleOf, fillJobs, earnKind, KEY_JOBS, JOBS, DEFAULT_NAV_SECS, DEFAULT_SCI_SECS,
-  SCORE_RULES, getBaseShipType, YEAR_GROUPS, currentRoundNum, getAccumulatedStandings, isGrandFinal,
+  SCORE_RULES, getBaseShipType, YEAR_GROUPS, roundSnapshot, survivorPlacements, topicKey, getAccumulatedStandings,
 } from "./game.js";
+
+import { DEFAULT_SET_ID } from "./qsets.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBAq-hGEtiIOs6GiZIwzamdq2XwTRS-7zk",
@@ -30,6 +32,7 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 const gameRef = (code, path = "") => ref(db, `games/${code}${path ? "/" + path : ""}`);
+const eventRef = (id, path = "") => ref(db, `events/${id}${path ? "/" + path : ""}`);
 
 // ---------- sign-in (anonymous, no student accounts needed) ----------
 export function ensureSignedIn() {
@@ -60,7 +63,8 @@ export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
 // questionSet: id of a built-in set. customSet: a checked set uploaded by the teacher (stored with the game).
-export async function createGame({ teamCount, teamNames, teamYears, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, questionSet, customSet, competitionMode = true, roundDurationMins = 8, totalRounds = 3 }) {
+// eventId + division link the game to a whole-school event. grandFinal makes it a one-round final.
+export async function createGame({ teamCount, teamNames, teamYears, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, questionSet, customSet, competitionMode = true, roundDurationMins = 8, totalRounds = 3, eventId = null, division = null, grandFinal = false, players = null }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -92,15 +96,17 @@ export async function createGame({ teamCount, teamNames, teamYears, startAmmo, r
       zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
       crewMax: crewMax || 0, evenTeams: evenTeams !== false,
       roles: !!roles, navSecs: navSecs || DEFAULT_NAV_SECS, sciSecs: sciSecs || DEFAULT_SCI_SECS,
-      questionSet: customSet ? "custom" : questionSet || "cs-year9-topics",
+      questionSet: customSet ? "custom" : questionSet || DEFAULT_SET_ID,
       competitionMode: !!competitionMode,
       roundDurationMins: roundDurationMins || 8,
       totalRounds: totalRounds || 3,
+      eventId,
+      division,
     },
     competition: {
       enabled: !!competitionMode,
-      stage: "prelims",
-      currentRound: 1,
+      stage: grandFinal ? "finals" : "prelims",
+      currentRound: grandFinal ? "final" : 1,
       totalRounds: totalRounds || 3,
       roundTimeSecs: (roundDurationMins || 8) * 60,
       roundStartedAt: null,
@@ -110,6 +116,7 @@ export async function createGame({ teamCount, teamNames, teamYears, startAmmo, r
     ...(customSet ? { questionSet: customSet } : {}),
     storm: 0,
     teams,
+    ...(players ? { players } : {}),
   });
   await addFeed(code, "Battle Royale initialized! Join with code " + code, "info");
   return code;
@@ -160,6 +167,23 @@ export const setMode = (code, mode, on) =>
 export async function endGame(code) {
   await update(gameRef(code), { phase: "finished" });
   await addFeed(code, "The teacher ended the game.", "info");
+}
+
+// Stop a tournament round with fleets still afloat: the clock ran out, or the
+// teacher ended it. The phase is claimed in a transaction, so if two callers
+// race (or the last fleet sinks at that moment) the points are only given once.
+export async function finishRound(code, why = "Time's up!") {
+  // the first run can see null before the value has loaded: returning it lets the server retry
+  const claim = await runTransaction(gameRef(code, "phase"), (p) => (p === null ? p : p === "battle" ? "finished" : undefined));
+  if (!claim.committed || claim.snapshot.val() !== "finished") return false;
+
+  const game = (await get(gameRef(code))).val();
+  const { winnerId, points } = survivorPlacements(game);
+  const updates = { winner: winnerId, stormNextAt: null };
+  for (const [id, pts] of Object.entries(points)) updates[`teams/${id}/placementScore`] = pts;
+  await update(gameRef(code), updates);
+  if (winnerId) await addFeed(code, `${why} ${game.teams[winnerId].name} win the round! (+${points[winnerId]} 1st place bonus)`, "win", winnerId);
+  return true;
 }
 
 // ---------- student actions ----------
@@ -320,17 +344,28 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
 
 // ---------- earning shots ----------
 // Returns how many shots were actually added (0 if the magazine is full)
-export async function recordAnswer(code, game, teamId, uid, correct, reward) {
+// question: the question answered, so the teacher can see results by topic
+export async function recordAnswer(code, game, teamId, uid, correct, reward, question = null) {
   const field = correct ? "correct" : "wrong";
   await Promise.all([
     runTransaction(gameRef(code, `players/${uid}/${field}`), (n) => (n || 0) + 1),
     runTransaction(gameRef(code, `teams/${teamId}/${field}`), (n) => (n || 0) + 1),
+    ...(question ? [runTransaction(gameRef(code, `stats/topics/${topicKey(question.topic)}/${field}`), (n) => (n || 0) + 1)] : []),
   ]);
   if (!correct) {
     await set(gameRef(code, `players/${uid}/streak`), 0);
     return { added: 0, powerup: null };
   }
   if (game.phase !== "battle") return { added: 0, powerup: null };
+
+  // Every right answer scores for the team, whatever the student's job.
+  // 1 shot = 10pts, 2 shots = 20pts, 3 shots = 30pts
+  const quizPts = (reward === 1 ? SCORE_RULES.quiz.easy : reward === 3 ? SCORE_RULES.quiz.hard : SCORE_RULES.quiz.medium) || 20;
+  const streak = await runTransaction(gameRef(code, `players/${uid}/streak`),
+    (n) => ((n || 0) + 1 >= STREAK_FOR_POWERUP ? 0 : (n || 0) + 1));
+  const streakDone = streak.committed && streak.snapshot.val() === 0;
+  const pts = quizPts + (streakDone ? SCORE_RULES.streak : 0);
+  await runTransaction(gameRef(code, `teams/${teamId}/quizScore`), (s) => (s || 0) + pts);
 
   // With crew roles on, navigators earn sonar and scientists earn airstrikes,
   // at most one every navSecs / sciSecs seconds
@@ -352,17 +387,11 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
     return now + added;
   });
 
-  // Credit team quiz score: 1 shot = 10pts, 2 shots = 20pts, 3 shots = 30pts
-  const quizPts = (reward === 1 ? SCORE_RULES.quiz.easy : reward === 3 ? SCORE_RULES.quiz.hard : SCORE_RULES.quiz.medium) || 20;
-  await runTransaction(gameRef(code, `teams/${teamId}/quizScore`), (s) => (s || 0) + quizPts);
-
   // every STREAK_FOR_POWERUP correct answers in a row earns the crew a power-up
   // (not with crew roles: the navigator and scientist earn those)
   if (rolesOn(game)) return { added, powerup: null };
-  const streak = await runTransaction(gameRef(code, `players/${uid}/streak`),
-    (n) => ((n || 0) + 1 >= STREAK_FOR_POWERUP ? 0 : (n || 0) + 1));
   let powerup = null;
-  if (streak.committed && streak.snapshot.val() === 0) {
+  if (streakDone) {
     powerup = Math.random() < 0.5 ? "sonar" : "airstrike";
     await runTransaction(gameRef(code, `teams/${teamId}/powerups/${powerup}`), (n) => (n || 0) + 1);
     const who = (game.players && game.players[uid] && game.players[uid].name) || "Someone";
@@ -442,29 +471,10 @@ export function addFeed(code, text, type = "info", teamId = null) {
 }
 
 // ---------------- competition round actions ----------------
-export async function advanceToNextRound(code, game) {
-  const comp = game.competition || {};
-  const roundNum = comp.currentRound || 1;
-
-  // Snapshot current round's team scores
-  const roundSummary = {};
-  for (const [tid, t] of Object.entries(game.teams || {})) {
-    roundSummary[tid] = {
-      combat: t.combatScore || 0,
-      quiz: t.quizScore || 0,
-      placement: t.placementScore || 0,
-      total: (t.combatScore || 0) + (t.quizScore || 0) + (t.placementScore || 0),
-      alive: t.alive,
-      sunkCount: t.sunkCount || 0,
-      correct: t.correct || 0,
-      wrong: t.wrong || 0,
-    };
-  }
-
-  const nextR = roundNum + 1;
+// Lock in the round just played and clear the ocean, keeping players and past scores
+function nextRoundUpdates(game, roundNum) {
   const updates = {
-    [`competition/rounds/${roundNum}`]: roundSummary,
-    "competition/currentRound": nextR,
+    [`competition/rounds/${roundNum}`]: roundSnapshot(game),
     "competition/roundStartedAt": null,
     "competition/roundEndsAt": null,
     phase: "placement",
@@ -474,12 +484,10 @@ export async function advanceToNextRound(code, game) {
     stormNextAt: null,
     winner: null,
   };
-
-  // Reset team states for the new round while keeping players and past scores intact
   for (const tid of Object.keys(game.teams)) {
     updates[`teams/${tid}/alive`] = true;
     updates[`teams/${tid}/ready`] = false;
-    updates[`teams/${tid}/ammo`] = game.settings.startAmmo || 3;
+    updates[`teams/${tid}/ammo`] = game.settings.startAmmo ?? 3;
     updates[`teams/${tid}/powerups`] = { sonar: 0, airstrike: 0 };
     updates[`teams/${tid}/combatScore`] = 0;
     updates[`teams/${tid}/quizScore`] = 0;
@@ -488,6 +496,15 @@ export async function advanceToNextRound(code, game) {
     updates[`teams/${tid}/intel`] = null;
     updates[`teams/${tid}/suggest`] = null;
   }
+  return updates;
+}
+
+export async function advanceToNextRound(code, game) {
+  const comp = game.competition || {};
+  const roundNum = comp.currentRound || 1;
+  const nextR = roundNum + 1;
+  const updates = nextRoundUpdates(game, roundNum);
+  updates["competition/currentRound"] = nextR;
 
   await update(gameRef(code), updates);
   await addFeed(code, `Round ${roundNum} completed! Starting Round ${nextR} of ${comp.totalRounds || 3}. Place your fleets!`, "info");
@@ -496,51 +513,100 @@ export async function advanceToNextRound(code, game) {
 export async function startGrandFinal(code, game) {
   const comp = game.competition || {};
   const roundNum = comp.currentRound || 3;
-
-  // Snapshot the last preliminary round if not yet snapshotted
-  const roundSummary = {};
-  for (const [tid, t] of Object.entries(game.teams || {})) {
-    roundSummary[tid] = {
-      combat: t.combatScore || 0,
-      quiz: t.quizScore || 0,
-      placement: t.placementScore || 0,
-      total: (t.combatScore || 0) + (t.quizScore || 0) + (t.placementScore || 0),
-      alive: t.alive,
-      sunkCount: t.sunkCount || 0,
-      correct: t.correct || 0,
-      wrong: t.wrong || 0,
-    };
-  }
-
-  const updates = {
-    [`competition/rounds/${roundNum}`]: roundSummary,
-    "competition/stage": "finals",
-    "competition/currentRound": "final",
-    "competition/roundStartedAt": null,
-    "competition/roundEndsAt": null,
-    phase: "placement",
-    shots: null,
-    fleets: null,
-    storm: 0,
-    stormNextAt: null,
-    winner: null,
-  };
-
-  for (const tid of Object.keys(game.teams)) {
-    updates[`teams/${tid}/alive`] = true;
-    updates[`teams/${tid}/ready`] = false;
-    updates[`teams/${tid}/ammo`] = game.settings.startAmmo || 3;
-    updates[`teams/${tid}/powerups`] = { sonar: 0, airstrike: 0 };
-    updates[`teams/${tid}/combatScore`] = 0;
-    updates[`teams/${tid}/quizScore`] = 0;
-    updates[`teams/${tid}/placementScore`] = 0;
-    updates[`teams/${tid}/sunkCount`] = 0;
-    updates[`teams/${tid}/intel`] = null;
-    updates[`teams/${tid}/suggest`] = null;
-  }
+  const updates = nextRoundUpdates(game, roundNum);
+  updates["competition/stage"] = "finals";
+  updates["competition/currentRound"] = "final";
 
   await update(gameRef(code), updates);
   await addFeed(code, "🏆 GRAND FINALS LAUNCHED! Year 7, 8, 9 and 10 Champions clash for the Ultimate Title!", "win");
 }
 
 export const setRoundEndsAt = (code, when) => update(gameRef(code), { "competition/roundEndsAt": when });
+
+// ---------------- whole-school events ----------------
+// events/{id} links one game per year group. Scores stay in the games and are
+// read live, so the event only stores what can't be worked out from them.
+export const watchEvent = (id, callback) => onValue(eventRef(id), (snap) => callback(snap.val()));
+export const eventExists = async (id) => (await get(eventRef(id, "title"))).exists();
+
+const NO_RULE_MESSAGE = "Firebase refused to save the event. Add the \"events\" rule in the Firebase console (see the README), then try again.";
+
+// divisions: [{ id: "Y7", teamNames: [...] }, ...]. settings: the createGame options they all share.
+export async function createEvent(title, divisions, settings) {
+  let id;
+  try {
+    do { id = makeCode(); } while (await eventExists(id));
+    // saved first, so a missing database rule stops us before any games are made
+    await set(eventRef(id), { title, createdAt: Date.now(), status: "running", divisions: {} });
+  } catch (e) {
+    throw new Error(/permission/i.test(`${e.code} ${e.message}`) ? NO_RULE_MESSAGE : e.message);
+  }
+  for (const d of divisions) {
+    const code = await createGame({
+      ...settings,
+      teamCount: d.teamNames.length,
+      teamNames: d.teamNames,
+      teamYears: d.teamNames.map(() => d.id),
+      competitionMode: true,
+      eventId: id,
+      division: d.id,
+    });
+    await update(eventRef(id, "divisions"), { [d.id]: code });
+  }
+  return id;
+}
+
+// Round 3 is over: lock in the round and name the year's champion
+export async function finaliseDivision(code, game) {
+  const { eventId, division } = game.settings;
+  const champ = getAccumulatedStandings(game)[0];
+  await update(gameRef(code), {
+    "competition/rounds/3": roundSnapshot(game),
+    "competition/stage": "complete",
+    "competition/champion": champ.teamId,
+  });
+  await set(eventRef(eventId, `champions/${division}`), { team: champ.teamId, name: champ.name, score: champ.totalScore, code });
+  await addFeed(code, `${champ.name} are the ${division} champions with ${champ.totalScore} points!`, "win", champ.teamId);
+}
+
+// Every finished division sends its champion's whole crew to a new final game
+export async function createGrandFinal(eventId, event, games) {
+  const years = YEAR_GROUPS.map((y) => y.id).filter((y) => event.champions && event.champions[y]);
+  const first = games[years[0]];
+  const s = first.settings;
+  const players = {};
+  years.forEach((y, i) => {
+    const from = event.champions[y].team;
+    for (const [uid, p] of Object.entries(games[y].players || {})) {
+      if (p.team === from) players[uid] = { name: p.name, avatar: p.avatar || null, team: "t" + i };
+    }
+  });
+  const code = await createGame({
+    teamCount: years.length,
+    teamNames: years.map((y) => event.champions[y].name),
+    teamYears: years,
+    startAmmo: s.startAmmo, reloadSecs: s.reloadSecs, modes: s.modes, torpedoSecs: s.torpedoSecs,
+    stormMins: s.stormMins, zoneSize: s.zoneSize, fleet: s.fleet,
+    crewMax: 0, evenTeams: false,
+    roles: s.roles, navSecs: s.navSecs, sciSecs: s.sciSecs,
+    questionSet: s.questionSet, customSet: s.questionSet === "custom" ? first.questionSet : null,
+    competitionMode: true, roundDurationMins: s.roundDurationMins, totalRounds: 1,
+    eventId, division: "final", grandFinal: true,
+    players: Object.keys(players).length ? players : null,
+  });
+  await update(eventRef(eventId), { finalCode: code });
+  // tell the division games, so qualified students get a button to the final
+  await Promise.all(years.map((y) => update(gameRef(event.divisions[y], "competition"), { finalCode: code })));
+  return code;
+}
+
+export const setEventWinner = (id, winner) => update(eventRef(id), { winner, status: "finished" });
+
+// Only one open dashboard may run an event's clocks, or free shots would arrive twice.
+// A tab holds the job for `ms` and renews it while it's open. Returns true if this tab has it.
+export async function claimClockLease(id, tabId, ms = 20000) {
+  const now = Date.now();
+  const t = await runTransaction(eventRef(id, "clockLease"), (cur) =>
+    (!cur || cur.tab === tabId || cur.until < now ? { tab: tabId, until: now + ms } : undefined));
+  return t.committed;
+}

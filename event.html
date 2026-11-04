@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Dashboard | CHMS Battleship Royale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="event-page">
+  <header class="topbar">
+    <h1 class="brand"><span id="event-title">Event</span> <small>Event ID <span id="event-id"></span></small></h1>
+    <div class="top-right no-print">
+      <a class="btn" id="wall-link" target="_blank" rel="noopener">Open hall screen</a>
+      <button class="btn" id="csv-standings" type="button">Download standings (CSV)</button>
+      <button class="btn" id="csv-topics" type="button">Download topics (CSV)</button>
+      <button class="btn" id="print" type="button">Print results</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <p class="msg" id="event-error" role="alert"></p>
+    <p class="clock-note no-print" id="clock-note" role="status"></p>
+
+    <section class="no-print" aria-label="Controls for every year">
+      <div class="btn-row" id="bulk"></div>
+    </section>
+
+    <section>
+      <h2>Road to the final</h2>
+      <div class="bracket" id="bracket"></div>
+      <div class="btn-row no-print" id="final-actions"></div>
+    </section>
+
+    <section>
+      <h2>Year standings</h2>
+      <div class="division-grid" id="divisions"></div>
+    </section>
+
+    <section>
+      <h2>Results by topic</h2>
+      <p class="hint">Weakest topics first, showing the percentage of answers that were right.</p>
+      <div class="table-wrap" id="topics"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/event.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # CHMS BSB Battleship Royale Competition 🏆
 
-An inter-year classroom Battle Royale tournament system developed for **Chung Hwa Middle School, Bandar Seri Begawan (CHMS BSB)**. Teams in **Year 7, Year 8, Year 9, and Year 10** clash across a shared naval ocean, earning ammunition, torpedoes, and airstrikes by solving **Year 9 Computer Studies** problems.
+An inter-year classroom Battle Royale tournament system developed for **Chung Hwa Middle School, Bandar Seri Begawan (CHMS BSB)**. **Year 7, Year 8, Year 9, and Year 10** all play at the same time. Each year has its own game code and map and competes only against itself, earning ammunition, torpedoes, and airstrikes by answering **General ICT** questions.
 
-The competition features a **Best of 3 Rounds** preliminary stage with **accumulated scoring**, culminating in an epic **Grand Finals** showdown where the top champions from Year 7, 8, 9, and 10 battle for the **Ultimate Winner** crown.
+Each year plays **3 rounds** with **accumulated scoring**. The top team from each year then meets in a **Grand Final** for the overall title. One **event dashboard** runs and records everything, and one **hall screen** shows all four battles side by side.
 
 ---
 
@@ -37,7 +37,7 @@ The competition is structured to last at least **30 minutes** with continuous en
 | Stage | Description | Duration |
 |---|---|---|
 | **Lobby & Briefing** | Students join on phones/laptops, pick avatars, form class crews | 3–4 mins |
-| **Stage 1: Round 1** | Fleet placement + Battle Royale (Combat & CS Questions) | 8 mins |
+| **Stage 1: Round 1** | Fleet placement + Battle Royale (Combat & ICT Questions) | 8 mins |
 | **Stage 1: Round 2** | Fleet placement + Battle Royale (Scores accumulate) | 8 mins |
 | **Stage 1: Round 3** | Final preliminary round (Finalizes accumulated scores) | 8 mins |
 | **Qualifier Ceremony** | Announcement of Year 7, 8, 9, and 10 Champions | 2–3 mins |
@@ -53,7 +53,7 @@ Points accumulate across Rounds 1, 2, and 3:
 
 $$\text{Total Score} = \text{Round 1 Points} + \text{Round 2 Points} + \text{Round 3 Points}$$
 
-### 1. Academic Points (Year 9 Computer Studies)
+### 1. Academic Points (General ICT)
 - **Easy Question**: `+10 pts` (Earns 1 shot)
 - **Medium Question**: `+20 pts` (Earns 2 shots)
 - **Hard Question**: `+30 pts` (Earns 3 shots)
@@ -71,19 +71,36 @@ $$\text{Total Score} = \text{Round 1 Points} + \text{Round 2 Points} + \text{Rou
 - **1st Place (Winner / Last Fleet Afloat)**: `+300 pts`
 - **2nd Place**: `+200 pts`
 - **3rd Place**: `+100 pts`
-- **4th Place**: `+50 pts`
+- **4th Place and below**: `+50 pts`
+
+If the clock runs out or the teacher ends a round, fleets still afloat are ranked by round score, then by ships afloat, and take the top placement points.
 
 ---
 
-## 💻 Year 9 Computer Studies Curriculum Topics
+## 💻 General ICT Question Bank
 
-The default question bank (`data/cs-year9-topics.json`) features **107 curriculum-aligned questions** (85 MCQs + 22 typed torpedo questions) covering:
+The default question bank (`data/ict-general.json`) has **160 questions** (128 multiple-choice + 32 typed torpedo questions), with 20 in each of these topics:
 
-1. **Computer Systems & Hardware**: CPU architecture, Von Neumann model, ALU, Control Unit, Registers (PC, MAR, MDR, ACC), Fetch-Decode-Execute cycle, RAM vs ROM, Secondary Storage (Magnetic, Optical, SSD), Cache memory, Actuators, Embedded systems.
-2. **Data Representation & Number Systems**: Binary, Denary, Hexadecimal conversions, 8-bit binary addition & overflow, Logical shifts, Storage units (bit to TB), ASCII vs Unicode, Pixel resolution, Colour depth, Sound sample rate, Lossy vs Lossless compression.
-3. **Networks & Communication**: LAN vs WAN, Star / Bus / Mesh topologies, Routers, Switches, Hubs, MAC addresses, IP addresses (IPv4 vs IPv6), DNS, Packet switching, Client-Server model, Fibre optics.
-4. **Cybersecurity, Safety & Ethics**: Malware (Viruses, Worms, Trojans, Ransomware, Spyware, Keyloggers), Phishing, Firewalls, Two-Factor Authentication (2FA), Strong passwords, Encryption (plaintext to ciphertext), Copyright, E-waste.
-5. **Algorithms, Logic Gates & Programming Concepts**: Logic gates (AND, OR, NOT, NAND, XOR), Flowchart symbols (Input/Output parallelograms, Decision diamonds), Sequence, Selection (`IF-THEN-ELSE`), Iteration (`WHILE-DO`, `FOR-TO`, `REPEAT-UNTIL`), Variables, Data types, `DIV` and `MOD` arithmetic.
+1. Hardware & Devices
+2. Software & Operating Systems
+3. Files, Data & Storage
+4. Documents & Presentations
+5. Spreadsheets
+6. Databases
+7. Networks & the Internet
+8. Online Safety & Ethics
+
+Every topic runs from easy to hard. In an event, each year sees its own mix of questions:
+
+| Division | Easy | Medium | Hard |
+|---|---|---|---|
+| Year 7 | 60% | 30% | 10% |
+| Year 8 | 50% | 35% | 15% |
+| Year 9 | 35% | 40% | 25% |
+| Year 10 | 25% | 40% | 35% |
+| Grand Final | 34% | 33% | 33% |
+
+The Year 9 Computer Studies, Computer Science 2210, pseudocode and Bahasa Melayu sets are still available in the question set list.
 
 ---
 
@@ -94,16 +111,27 @@ Host the repository on GitHub Pages or any static web server:
 | Role | Access URL | Purpose |
 |---|---|---|
 | **Students** | `https://fragilesilver.github.io/chmsbsb-battleship/` | Join game, pick crew, place ships, fire, earn shots |
-| **Teacher** | `https://fragilesilver.github.io/chmsbsb-battleship/teacher.html` | Tournament setup, round manager, match clock, phase controls |
-| **Hall / Class Projector** | `https://fragilesilver.github.io/chmsbsb-battleship/projector.html?code=XXXX` | Full-screen ocean radar, match countdown clock, live leaderboard |
+| **Teacher** | `https://fragilesilver.github.io/chmsbsb-battleship/teacher.html` | Create an event or a single game, and run a game's control room |
+| **Event dashboard** | `https://fragilesilver.github.io/chmsbsb-battleship/event.html?id=XXXX` | Run all years at once, see the bracket, standings and topic results, export results |
+| **Hall screen** | `https://fragilesilver.github.io/chmsbsb-battleship/projector.html?event=XXXX` | All four battles side by side, with join codes and QR codes in the lobby |
+| **One year's projector** | `https://fragilesilver.github.io/chmsbsb-battleship/projector.html?code=XXXX` | Full-screen map, match clock and leaderboard for one game |
 
-### Teacher Tournament Management:
-1. Open `teacher.html` and click **Create game** (Year 9 Computer Studies and 4 Divisions are selected by default).
-2. Project `projector.html?code=XXXX` onto the screen. Students scan the QR code or enter the 4-letter code.
-3. Click **Open fleet placement** $\rightarrow$ crews place their fleets on their phones.
-4. Click **Start battle** $\rightarrow$ Round 1 begins with live match clock and real-time accumulated scoring.
-5. When a round finishes, click **Start Round 2 of 3 (Keep Crews)** $\rightarrow$ the system seamlessly opens placement for Round 2 without students needing to re-enter room codes!
-6. After Round 3 concludes, the system flags the top team from Year 7, 8, 9, and 10. Click **Launch Grand Finals** for the ultimate 4-way championship battle!
+### One-time Firebase setup for events
+Event records are stored in a new `events` area of the database, so it needs its own rule. In the Firebase console, open **Realtime Database > Rules** and add an `events` entry beside your existing `games` entry, using the same `.read` and `.write` conditions. Keep your existing rules. Until this is done, creating an event shows an error; single games still work.
+
+### Running a whole-school event
+1. Open `teacher.html`. Keep the format as **Whole-school event**, name each year's teams, and click **Create event**. You land on the event dashboard. Note its Event ID so you can reopen it.
+2. Click **Open hall screen** and put it on the projector. Each year scans its own QR code or types its own code.
+3. On the dashboard, click **Open fleet placement**, then **Start battle**. These buttons act on every year at once, and each year's card has its own buttons too.
+4. **Keep the dashboard open and visible during battles.** It runs free shots, the storm and the round clock for every year. Only one open dashboard runs them; any others just show results.
+5. Rounds end automatically when the clock runs out. Click **Start next round** for Rounds 2 and 3. Students don't need to re-enter a code.
+6. After Round 3, click **Finalise and name champion**, then **Create the Grand Final**. Each champion's crew gets a **Join the Grand Final** button, and the hall screen switches to the final.
+7. Use **Download standings**, **Download topics** and **Print results** for your records and prize-giving. Results by topic list the weakest topics first.
+
+Each year can have up to 6 teams. Use **Control room** on a year's card for extra controls such as supply drops and bonus shots. That page shows every ship, so don't project it.
+
+### Running a single game
+Choose **One game** (3 rounds and a final on one map) or **One casual game** as the format, then click **Create game**. Keep the control room tab open, because it runs that game's clocks.
 
 ---
 
