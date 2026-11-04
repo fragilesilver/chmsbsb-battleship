@@ -32,12 +32,13 @@ const CS_SET = {
 
 // Sets that ship with the game. `file` ones are fetched when first needed.
 export const BUILTIN_SETS = [
+  { id: "ict-general", title: "General ICT (Years 7 to 10)", file: "data/ict-general.json" },
   { id: "cs-year9-topics", title: "Year 9 Computer Studies (CHMS BSB)", file: "data/cs-year9-topics.json" },
   { id: "cs-2210-revision", title: "Computer Science 2210 Revision (Ch 1-6)", file: "data/cs-2210-revision.json" },
   { id: "cs-pseudocode", title: CS_SET.title, set: CS_SET },
   { id: "bm-psr", title: "Bahasa Melayu PSR", file: "data/bm-psr.json" },
 ];
-export const DEFAULT_SET_ID = "cs-year9-topics";
+export const DEFAULT_SET_ID = "ict-general";
 
 const cache = new Map();
 
