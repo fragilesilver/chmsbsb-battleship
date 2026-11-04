@@ -44,13 +44,20 @@ export function fleetFor(s) {
 // Name of the ship with this id in this game ("destroyer2" -> "Destroyer 2")
 export const shipName = (s, id) => (fleetFor(s).find((f) => f.id === id) || { name: "ship" }).name;
 
+export const YEAR_GROUPS = [
+  { id: "Y7", name: "Year 7", color: "#1f6fb2", icon: "⚓" },
+  { id: "Y8", name: "Year 8", color: "#1f8a5b", icon: "🧭" },
+  { id: "Y9", name: "Year 9", color: "#c98a06", icon: "⚡" },
+  { id: "Y10", name: "Year 10", color: "#d0342c", icon: "👑" },
+];
+
 export const TEAM_PRESETS = [
-  { name: "Red Raiders",       color: "#d0342c" },
-  { name: "Blue Sharks",       color: "#1f6fb2" },
-  { name: "Green Turtles",     color: "#1f8a5b" },
-  { name: "Gold Krakens",      color: "#c98a06" },
-  { name: "Purple Squids",     color: "#7a3fb0" },
-  { name: "Orange Barracudas", color: "#e0621b" },
+  { name: "Year 7 Titans",     color: "#1f6fb2", year: "Y7" },
+  { name: "Year 8 Krakens",    color: "#1f8a5b", year: "Y8" },
+  { name: "Year 9 Cyberhawks", color: "#c98a06", year: "Y9" },
+  { name: "Year 10 Apex",      color: "#d0342c", year: "Y10" },
+  { name: "Purple Squids",     color: "#7a3fb0", year: "Y7" },
+  { name: "Orange Barracudas", color: "#e0621b", year: "Y8" },
 ];
 
 // Geometry functions take the game settings `s` ({ teamCount, zoneSize })
@@ -306,4 +313,86 @@ export function fillJobs(g, teamId) {
   const jobless = members.filter((u) => !JOBS.includes(g.players[u].role));
   for (const u of jobless.sort(() => Math.random() - 0.5)) updates[u] = open.shift() || "crew";
   return updates;   // { uid: role }
+}
+
+// ---------------- competition & scoring ----------------
+export const SCORE_RULES = {
+  hit: 25,
+  sink: { patrol: 50, submarine: 75, destroyer: 75, carrier: 100, battleship: 125 },
+  eliminate: 200,
+  placement: [300, 200, 100, 50],
+  quiz: { easy: 10, medium: 20, hard: 30 },
+  streak: 25,
+};
+
+export const getBaseShipType = (id) => String(id || "").replace(/\d+$/, "");
+
+export const isCompetition = (g) => !!(g && g.settings && g.settings.competitionMode);
+export const currentRoundNum = (g) => (g && g.competition && g.competition.currentRound) || 1;
+export const isGrandFinal = (g) => !!(g && g.competition && (g.competition.stage === "finals" || g.competition.currentRound === "final"));
+
+// Standings across rounds (Best of 3 + current round)
+export function getAccumulatedStandings(g) {
+  if (!g || !g.teams) return [];
+  const comp = g.competition || {};
+  const pastRounds = comp.rounds || {};
+  const shots = g.shots || {};
+
+  const list = Object.entries(g.teams).map(([id, t]) => {
+    const r1 = (pastRounds["1"] && pastRounds["1"][id] && pastRounds["1"][id].total) || 0;
+    const r2 = (pastRounds["2"] && pastRounds["2"][id] && pastRounds["2"][id].total) || 0;
+    const r3 = (pastRounds["3"] && pastRounds["3"][id] && pastRounds["3"][id].total) || 0;
+
+    // Current round live score
+    const curCombat = t.combatScore || 0;
+    const curQuiz = t.quizScore || 0;
+    const curPlacement = t.placementScore || 0;
+    const curTotal = curCombat + curQuiz + curPlacement;
+
+    const roundNum = currentRoundNum(g);
+    const liveRoundScore = (pastRounds[String(roundNum)] && pastRounds[String(roundNum)][id]) ? 0 : curTotal;
+    const totalScore = r1 + r2 + r3 + liveRoundScore;
+
+    const fleet = g.fleets && g.fleets[id];
+    const afloat = fleet ? shipList(fleet).filter((s) => !isSunk(s, shots)).length : fleetFor(g.settings).length;
+
+    const correct = t.correct || 0;
+    const wrong = t.wrong || 0;
+    const accuracy = (correct + wrong) > 0 ? Math.round((correct / (correct + wrong)) * 100) : 0;
+
+    return {
+      teamId: id,
+      name: t.name,
+      year: t.year || YEAR_GROUPS[teamIndex(id) % YEAR_GROUPS.length].id,
+      color: t.color,
+      alive: t.alive,
+      afloat,
+      r1: (pastRounds["1"] && pastRounds["1"][id] && pastRounds["1"][id].total) || (roundNum === 1 ? curTotal : 0),
+      r2: (pastRounds["2"] && pastRounds["2"][id] && pastRounds["2"][id].total) || (roundNum === 2 ? curTotal : 0),
+      r3: (pastRounds["3"] && pastRounds["3"][id] && pastRounds["3"][id].total) || (roundNum === 3 ? curTotal : 0),
+      liveRoundScore: curTotal,
+      totalScore,
+      correct,
+      wrong,
+      accuracy,
+      sunkCount: t.sunkCount || 0,
+      qualified: false,
+    };
+  });
+
+  // Sort overall by totalScore descending, then accuracy descending, then afloat descending
+  list.sort((a, b) => (b.totalScore - a.totalScore) || (b.accuracy - a.accuracy) || (b.afloat - a.afloat));
+
+  // Determine top for each year group
+  const topPerYear = {};
+  for (const item of list) {
+    if (!topPerYear[item.year]) {
+      topPerYear[item.year] = item.teamId;
+      item.isYearTop = true;
+    } else {
+      item.isYearTop = false;
+    }
+  }
+
+  return list;
 }

@@ -11,9 +11,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="projector">
-  <header class="topbar">
-    <h1 class="brand">Battleship Royale <small>CHMS BSB</small></h1>
+  <header class="topbar proj-topbar">
+    <div class="brand-wrap">
+      <h1 class="brand">Battleship Royale <small>CHMS BSB Tournament</small></h1>
+      <span class="proj-stage-badge" id="proj-stage-badge">Round 1 of 3</span>
+    </div>
+    <div class="proj-hud-center" id="proj-hud-center">
+      <span class="proj-match-label">Match Clock</span>
+      <span class="proj-match-timer" id="proj-match-timer">--:--</span>
+    </div>
     <div class="top-right">
+      <button class="btn btn-sm toggle-btn" id="proj-toggle-view" type="button">Leaderboard</button>
       <div class="proj-join" id="proj-join"></div>
       <button class="btn mute" id="mute" type="button"></button>
     </div>
@@ -46,12 +54,28 @@
     </section>
 
     <section id="screen-battle" class="screen proj-battle" hidden>
-      <div class="chart-wrap"><div id="ocean"></div></div>
-      <aside class="proj-side">
-        <div class="proj-storm" id="proj-storm"></div>
-        <ul class="teams big" id="teams"></ul>
-        <ol class="feed big" id="feed"></ol>
-      </aside>
+      <!-- Ocean view -->
+      <div class="proj-main-view" id="proj-view-ocean">
+        <div class="chart-wrap"><div id="ocean"></div></div>
+        <aside class="proj-side">
+          <div class="proj-storm" id="proj-storm"></div>
+          <div class="proj-mini-leaderboard" id="proj-mini-leaderboard"></div>
+          <ul class="teams big" id="teams"></ul>
+          <ol class="feed big" id="feed"></ol>
+        </aside>
+      </div>
+
+      <!-- Full-screen Tournament Standings overlay -->
+      <div class="proj-standings-view" id="proj-view-standings" hidden>
+        <div class="psv-card">
+          <div class="psv-head">
+            <h2>🏆 CHMS BSB Tournament Standings <small id="psv-round-sub">Best of 3 Accumulated Scores</small></h2>
+            <p class="psv-desc">Top team in Year 7, Year 8, Year 9 and Year 10 qualify for the Grand Finals</p>
+          </div>
+          <div class="psv-body" id="psv-table-wrap"></div>
+        </div>
+      </div>
+
       <div class="winner-banner" id="winner" hidden></div>
     </section>
   </main>

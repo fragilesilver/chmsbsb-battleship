@@ -12,6 +12,7 @@ import {
   maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
   ZONE, DEFAULT_FLEET, avatarOf, shipName, crewBlock,
   rolesOn, crewOf, captainOf, roleOf, fillJobs, earnKind, KEY_JOBS, JOBS, DEFAULT_NAV_SECS, DEFAULT_SCI_SECS,
+  SCORE_RULES, getBaseShipType, YEAR_GROUPS, currentRoundNum, getAccumulatedStandings, isGrandFinal,
 } from "./game.js";
 
 const firebaseConfig = {
@@ -59,19 +60,25 @@ export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
 // questionSet: id of a built-in set. customSet: a checked set uploaded by the teacher (stored with the game).
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, questionSet, customSet }) {
+export async function createGame({ teamCount, teamNames, teamYears, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs, questionSet, customSet, competitionMode = true, roundDurationMins = 8, totalRounds = 3 }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
   const teams = {};
   teamIds(teamCount).forEach((id, i) => {
+    const yr = (teamYears && teamYears[i]) || (TEAM_PRESETS[i] && TEAM_PRESETS[i].year) || YEAR_GROUPS[i % YEAR_GROUPS.length].id;
     teams[id] = {
-      name: teamNames[i] || TEAM_PRESETS[i].name,
-      color: TEAM_PRESETS[i].color,
+      name: (teamNames && teamNames[i]) || TEAM_PRESETS[i].name,
+      year: yr,
+      color: (TEAM_PRESETS[i] && TEAM_PRESETS[i].color) || "#1f6fb2",
       ammo: startAmmo,
       alive: true,
       ready: false,
       powerups: { sonar: 0, airstrike: 0 },
+      combatScore: 0,
+      quizScore: 0,
+      placementScore: 0,
+      sunkCount: 0,
     };
   });
 
@@ -85,13 +92,26 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
       zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
       crewMax: crewMax || 0, evenTeams: evenTeams !== false,
       roles: !!roles, navSecs: navSecs || DEFAULT_NAV_SECS, sciSecs: sciSecs || DEFAULT_SCI_SECS,
-      questionSet: customSet ? "custom" : questionSet || "cs-pseudocode",
+      questionSet: customSet ? "custom" : questionSet || "cs-year9-topics",
+      competitionMode: !!competitionMode,
+      roundDurationMins: roundDurationMins || 8,
+      totalRounds: totalRounds || 3,
+    },
+    competition: {
+      enabled: !!competitionMode,
+      stage: "prelims",
+      currentRound: 1,
+      totalRounds: totalRounds || 3,
+      roundTimeSecs: (roundDurationMins || 8) * 60,
+      roundStartedAt: null,
+      roundEndsAt: null,
+      rounds: {},
     },
     ...(customSet ? { questionSet: customSet } : {}),
     storm: 0,
     teams,
   });
-  await addFeed(code, "Game created. Join with code " + code, "info");
+  await addFeed(code, "Battle Royale initialized! Join with code " + code, "info");
   return code;
 }
 
@@ -110,8 +130,14 @@ export async function startBattle(code, game) {
   updates.phase = "battle";
   updates.storm = 0;
   updates.stormNextAt = game.settings.stormMins > 0 ? Date.now() + game.settings.stormMins * 60000 : null;
+  if (game.competition && game.competition.enabled) {
+    const durSecs = game.competition.roundTimeSecs || (game.settings.roundDurationMins || 8) * 60;
+    updates["competition/roundStartedAt"] = Date.now();
+    updates["competition/roundEndsAt"] = Date.now() + durSecs * 1000;
+  }
   await update(gameRef(code), updates);
-  await addFeed(code, "Battle stations! Firing is open.", "info");
+  const rLabel = game.competition && game.competition.currentRound === "final" ? "Grand Finals" : `Round ${(game.competition && game.competition.currentRound) || 1}`;
+  await addFeed(code, `${rLabel} underway! Battle stations open!`, "info");
 }
 
 // The avatars of everyone on a team, for painting on their ships
@@ -247,26 +273,48 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   const victim = game.teams[found.teamId].name;
   const result = { hit: true, cell: cellName(r, c), sunk: false, eliminated: false };
 
+  // Record combat score for hit
+  let earnedCombat = SCORE_RULES.hit;
+
   if (isSunk(found.ship, shots)) {
     result.sunk = shipName(game.settings, found.ship.id);
-    await addFeed(code, `${shooter} sank ${victim}'s ${shipName(game.settings, found.ship.id).toLowerCase()} at ${cellName(r, c)}`, "sink", teamId);
+    const baseType = getBaseShipType(found.ship.id);
+    const sinkBonus = SCORE_RULES.sink[baseType] || 75;
+    earnedCombat += sinkBonus;
+
+    await Promise.all([
+      runTransaction(gameRef(code, `teams/${teamId}/sunkCount`), (n) => (n || 0) + 1),
+      addFeed(code, `${shooter} sank ${victim}'s ${shipName(game.settings, found.ship.id).toLowerCase()} at ${cellName(r, c)} (+${sinkBonus} pts)`, "sink", teamId),
+    ]);
 
     if (shipsAfloat(game.fleets[found.teamId], shots) === 0) {
       result.eliminated = victim;
-      await update(gameRef(code, `teams/${found.teamId}`), { alive: false, ammo: 0 });
-      await addFeed(code, `${victim} is out! Eliminated by ${shooter}.`, "out", teamId);
+      earnedCombat += SCORE_RULES.eliminate;
 
-      const teams = (await get(gameRef(code, "teams"))).val();
-      const left = Object.entries(teams).filter(([, t]) => t.alive);
-      if (left.length <= 1) {
-        await update(gameRef(code), { phase: "finished", winner: left[0] ? left[0][0] : null });
-        if (left[0]) await addFeed(code, `${left[0][1].name} win the battle royale!`, "win", left[0][0]);
+      // Calculate placement points
+      const currentTeams = (await get(gameRef(code, "teams"))).val() || {};
+      const stillAlive = Object.entries(currentTeams).filter(([tid, t]) => t.alive && tid !== found.teamId);
+      const placeIdx = stillAlive.length; // e.g. 4 teams: 1st out gets index 3 (4th place)
+      const placementPts = SCORE_RULES.placement[Math.min(placeIdx, SCORE_RULES.placement.length - 1)] || 50;
+
+      await update(gameRef(code, `teams/${found.teamId}`), { alive: false, ammo: 0, placementScore: placementPts });
+      await addFeed(code, `${victim} is out! Eliminated by ${shooter} (+${SCORE_RULES.eliminate} pts).`, "out", teamId);
+
+      if (stillAlive.length <= 1) {
+        const winnerId = stillAlive[0] ? stillAlive[0][0] : teamId;
+        const winnerPts = SCORE_RULES.placement[0]; // 300 pts for 1st
+        await update(gameRef(code, `teams/${winnerId}`), { placementScore: winnerPts });
+        await update(gameRef(code), { phase: "finished", winner: winnerId });
+        if (stillAlive[0]) await addFeed(code, `${stillAlive[0][1].name} win the round! (+${winnerPts} 1st place bonus)`, "win", winnerId);
       }
     }
   } else {
     const how = { torpedo: " with a torpedo", code: " with code", airstrike: " in an airstrike" }[opts.via] || "";
-    await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}${how}`, "hit", teamId);
+    await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}${how} (+${SCORE_RULES.hit} pts)`, "hit", teamId);
   }
+
+  // Update combat score transaction
+  await runTransaction(gameRef(code, `teams/${teamId}/combatScore`), (s) => (s || 0) + earnedCombat);
   return result;
 }
 
@@ -303,6 +351,10 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
     added = Math.max(0, Math.min(cap, now + reward) - now);
     return now + added;
   });
+
+  // Credit team quiz score: 1 shot = 10pts, 2 shots = 20pts, 3 shots = 30pts
+  const quizPts = (reward === 1 ? SCORE_RULES.quiz.easy : reward === 3 ? SCORE_RULES.quiz.hard : SCORE_RULES.quiz.medium) || 20;
+  await runTransaction(gameRef(code, `teams/${teamId}/quizScore`), (s) => (s || 0) + quizPts);
 
   // every STREAK_FOR_POWERUP correct answers in a row earns the crew a power-up
   // (not with crew roles: the navigator and scientist earn those)
@@ -388,3 +440,107 @@ export const setStormNextAt = (code, when) => update(gameRef(code), { stormNextA
 export function addFeed(code, text, type = "info", teamId = null) {
   return push(gameRef(code, "feed"), { text, type, teamId, t: Date.now() });
 }
+
+// ---------------- competition round actions ----------------
+export async function advanceToNextRound(code, game) {
+  const comp = game.competition || {};
+  const roundNum = comp.currentRound || 1;
+
+  // Snapshot current round's team scores
+  const roundSummary = {};
+  for (const [tid, t] of Object.entries(game.teams || {})) {
+    roundSummary[tid] = {
+      combat: t.combatScore || 0,
+      quiz: t.quizScore || 0,
+      placement: t.placementScore || 0,
+      total: (t.combatScore || 0) + (t.quizScore || 0) + (t.placementScore || 0),
+      alive: t.alive,
+      sunkCount: t.sunkCount || 0,
+      correct: t.correct || 0,
+      wrong: t.wrong || 0,
+    };
+  }
+
+  const nextR = roundNum + 1;
+  const updates = {
+    [`competition/rounds/${roundNum}`]: roundSummary,
+    "competition/currentRound": nextR,
+    "competition/roundStartedAt": null,
+    "competition/roundEndsAt": null,
+    phase: "placement",
+    shots: null,
+    fleets: null,
+    storm: 0,
+    stormNextAt: null,
+    winner: null,
+  };
+
+  // Reset team states for the new round while keeping players and past scores intact
+  for (const tid of Object.keys(game.teams)) {
+    updates[`teams/${tid}/alive`] = true;
+    updates[`teams/${tid}/ready`] = false;
+    updates[`teams/${tid}/ammo`] = game.settings.startAmmo || 3;
+    updates[`teams/${tid}/powerups`] = { sonar: 0, airstrike: 0 };
+    updates[`teams/${tid}/combatScore`] = 0;
+    updates[`teams/${tid}/quizScore`] = 0;
+    updates[`teams/${tid}/placementScore`] = 0;
+    updates[`teams/${tid}/sunkCount`] = 0;
+    updates[`teams/${tid}/intel`] = null;
+    updates[`teams/${tid}/suggest`] = null;
+  }
+
+  await update(gameRef(code), updates);
+  await addFeed(code, `Round ${roundNum} completed! Starting Round ${nextR} of ${comp.totalRounds || 3}. Place your fleets!`, "info");
+}
+
+export async function startGrandFinal(code, game) {
+  const comp = game.competition || {};
+  const roundNum = comp.currentRound || 3;
+
+  // Snapshot the last preliminary round if not yet snapshotted
+  const roundSummary = {};
+  for (const [tid, t] of Object.entries(game.teams || {})) {
+    roundSummary[tid] = {
+      combat: t.combatScore || 0,
+      quiz: t.quizScore || 0,
+      placement: t.placementScore || 0,
+      total: (t.combatScore || 0) + (t.quizScore || 0) + (t.placementScore || 0),
+      alive: t.alive,
+      sunkCount: t.sunkCount || 0,
+      correct: t.correct || 0,
+      wrong: t.wrong || 0,
+    };
+  }
+
+  const updates = {
+    [`competition/rounds/${roundNum}`]: roundSummary,
+    "competition/stage": "finals",
+    "competition/currentRound": "final",
+    "competition/roundStartedAt": null,
+    "competition/roundEndsAt": null,
+    phase: "placement",
+    shots: null,
+    fleets: null,
+    storm: 0,
+    stormNextAt: null,
+    winner: null,
+  };
+
+  for (const tid of Object.keys(game.teams)) {
+    updates[`teams/${tid}/alive`] = true;
+    updates[`teams/${tid}/ready`] = false;
+    updates[`teams/${tid}/ammo`] = game.settings.startAmmo || 3;
+    updates[`teams/${tid}/powerups`] = { sonar: 0, airstrike: 0 };
+    updates[`teams/${tid}/combatScore`] = 0;
+    updates[`teams/${tid}/quizScore`] = 0;
+    updates[`teams/${tid}/placementScore`] = 0;
+    updates[`teams/${tid}/sunkCount`] = 0;
+    updates[`teams/${tid}/intel`] = null;
+    updates[`teams/${tid}/suggest`] = null;
+  }
+
+  await update(gameRef(code), updates);
+  await addFeed(code, "🏆 GRAND FINALS LAUNCHED! Year 7, 8, 9 and 10 Champions clash for the Ultimate Title!", "win");
+}
+
+export const setRoundEndsAt = (code, when) => update(gameRef(code), { "competition/roundEndsAt": when });

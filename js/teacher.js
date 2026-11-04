@@ -5,11 +5,13 @@ import {
   ensureSignedIn, createGame, watchGame, gameExists, setPhase,
   startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
   advanceStorm, setStormNextAt, givePowerups, ensureCaptains,
+  advanceToNextRound, startGrandFinal, setRoundEndsAt,
 } from "./firebase.js";
 import {
   TEAM_PRESETS, fleetComplete, maxStorm, ZONE, ZONE_SIZES, SHIP_TYPES, DEFAULT_FLEET, MAX_PER_TYPE,
   gridSize, colLabel, fleetFor, randomFleet, zoneFor, avatarOf,
   ROLES, rolesOn, captainOf, roleOf,
+  YEAR_GROUPS, isCompetition, currentRoundNum, isGrandFinal, getAccumulatedStandings,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { BUILTIN_SETS, DEFAULT_SET_ID, loadBuiltin, setFromFile, setForGame, describeSet, modeAllowed } from "./qsets.js";
@@ -79,9 +81,15 @@ pickBuiltin();
 // ---------------- setup form ----------------
 function drawNameInputs() {
   const n = +$("team-count").value;
-  $("team-names").innerHTML = TEAM_PRESETS.slice(0, n).map((t, i) =>
-    `<label class="name-row" style="--tc:${t.color}"><span class="pennant"></span>
-      <input data-i="${i}" value="${t.name}" maxlength="24" aria-label="Team ${i + 1} name"></label>`).join("");
+  $("team-names").innerHTML = TEAM_PRESETS.slice(0, n).map((t, i) => {
+    const yr = t.year || YEAR_GROUPS[i % YEAR_GROUPS.length].id;
+    return `<label class="name-row" style="--tc:${t.color}"><span class="pennant"></span>
+      <input data-i="${i}" value="${t.name}" maxlength="24" aria-label="Team ${i + 1} name">
+      <select class="team-year" data-year-i="${i}" aria-label="Year group">
+        ${YEAR_GROUPS.map((y) => `<option value="${y.id}" ${y.id === yr ? "selected" : ""}>${y.name}</option>`).join("")}
+      </select>
+    </label>`;
+  }).join("");
 }
 $("team-count").addEventListener("change", () => { drawNameInputs(); checkMapAndFleet(); });
 drawNameInputs();
@@ -135,9 +143,14 @@ $("setup-form").addEventListener("submit", async (e) => {
   if (err) { $("fleet-sum").scrollIntoView({ block: "center" }); return; }
   if (!chosen.set) { $("qset-info").scrollIntoView({ block: "center" }); return; }
   await ready;
+  const teamYears = [...document.querySelectorAll("#team-names .team-year")].map((s) => s.value);
+  const isComp = $("comp-mode") ? $("comp-mode").checked : true;
+  const roundMins = $("round-duration") ? Math.max(3, Math.round(+$("round-duration").value || 8)) : 8;
+
   const code = await createGame({
     teamCount: +$("team-count").value,
     teamNames: [...document.querySelectorAll("#team-names input")].map((i) => i.value.trim()),
+    teamYears,
     startAmmo: +$("start-ammo").value,
     reloadSecs: +$("reload-secs").value,
     torpedoSecs: +$("torpedo-secs").value,
@@ -156,6 +169,9 @@ $("setup-form").addEventListener("submit", async (e) => {
     },
     questionSet: chosen.custom ? "custom" : chosen.set.id,
     customSet: chosen.custom ? chosen.set : null,
+    competitionMode: isComp,
+    roundDurationMins: roundMins,
+    totalRounds: 3,
   });
   openGame(code);
 });
@@ -194,6 +210,65 @@ function render() {
   const g = state.game;
   if (!g) return;
 
+  const isComp = isCompetition(g);
+  const rNum = currentRoundNum(g);
+  const isFinal = isGrandFinal(g);
+  const comp = g.competition || {};
+
+  // Update Tournament Banner
+  if ($("tourney-bar")) {
+    $("tourney-bar").hidden = !isComp;
+    if (isComp) {
+      $("tb-badge").textContent = isFinal ? "🏆 GRAND FINALS" : `Round ${rNum} of ${comp.totalRounds || 3}`;
+      $("tb-title").textContent = isFinal
+        ? "Ultimate Championship Showdown: Y7 vs Y8 vs Y9 vs Y10"
+        : `Stage 1: Best of 3 Preliminaries (Accumulated Scores)`;
+    }
+  }
+
+  // Render Standings Table
+  if ($("tourney-standings-card")) {
+    $("tourney-standings-card").hidden = !isComp;
+    if (isComp && $("standings-table-wrap")) {
+      const standings = getAccumulatedStandings(g);
+      $("standings-table-wrap").innerHTML = `<table class="standings-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Year</th>
+            <th>R1</th>
+            <th>R2</th>
+            <th>R3</th>
+            <th>Live Round</th>
+            <th>Total Points</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${standings.map((s, idx) => {
+            const yrObj = YEAR_GROUPS.find((y) => y.id === s.year);
+            const yrLabel = yrObj ? yrObj.name : s.year;
+            return `<tr style="--tc:${s.color}">
+              <td><strong>#${idx + 1}</strong></td>
+              <td><span class="pennant"></span><strong>${escapeHtml(s.name)}</strong></td>
+              <td><span class="year-badge">${yrLabel}</span></td>
+              <td>${s.r1}</td>
+              <td>${s.r2}</td>
+              <td>${s.r3}</td>
+              <td>${s.liveRoundScore}</td>
+              <td><strong class="total-pts">${s.totalScore}</strong></td>
+              <td>
+                ${s.isYearTop ? '<span class="qual-badge" title="Top in Year: Qualifies for Grand Finals">⭐ Top in ' + s.year + '</span>' : ''}
+                ${s.alive ? `<span class="stat-afloat">${s.afloat} afloat</span>` : '<span class="stat-out">Sunk</span>'}
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+    }
+  }
+
   document.querySelectorAll("#phases li").forEach((li) => {
     const order = ["lobby", "placement", "battle", "finished"];
     li.className = li.dataset.p === g.phase ? "now" : order.indexOf(li.dataset.p) < order.indexOf(g.phase) ? "done" : "";
@@ -220,14 +295,36 @@ function render() {
         ${hasTimer ? `<button class="btn ${state.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${state.autoReload}">
           Free shots: ${state.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>` : ""}
         <button class="btn" data-action="supply">Supply drop: sonar + airstrike for all</button>
-        <button class="btn danger" data-action="end">End game</button>
+        <button class="btn danger" data-action="end">End round now</button>
       </div>
       ${stormControls(g)}`;
   } else {
     const w = g.winner && g.teams[g.winner];
-    html = `<p class="big">${w ? `${escapeHtml(w.name)} win!` : "Game over."}</p>
-      <button class="btn primary" data-action="new">Set up a new game</button>`;
+    if (isComp) {
+      if (isFinal) {
+        html = `<p class="big">🏆 ${w ? `<strong>${escapeHtml(w.name)}</strong> crowned CHMS BSB Ultimate Champion!` : "Grand Finals concluded!"}</p>
+          <div class="btn-row">
+            <button class="btn primary" data-action="new">Set up a new tournament</button>
+          </div>`;
+      } else if (rNum < 3) {
+        html = `<p class="big">${w ? `${escapeHtml(w.name)} won Round ${rNum}!` : `Round ${rNum} concluded.`} Scores have been accumulated.</p>
+          <div class="btn-row">
+            <button class="btn primary" data-action="next-round">Start Round ${rNum + 1} of 3 (Keep Crews)</button>
+            <button class="btn" data-action="new">Set up a new tournament</button>
+          </div>`;
+      } else {
+        html = `<p class="big">Preliminaries complete! Best of 3 scores calculated. The 4 Year Champions are ready for the ultimate title.</p>
+          <div class="btn-row">
+            <button class="btn primary" data-action="grand-final">🏆 Launch Grand Finals (Y7 vs Y8 vs Y9 vs Y10)</button>
+            <button class="btn" data-action="new">Set up a new tournament</button>
+          </div>`;
+      }
+    } else {
+      html = `<p class="big">${w ? `${escapeHtml(w.name)} win!` : "Game over."}</p>
+        <button class="btn primary" data-action="new">Set up a new game</button>`;
+    }
   }
+
   if (g.phase === "placement" || g.phase === "battle") {
     const m = modesOf(g);
     const label = { quiz: "Questions", torpedo: "Torpedoes", console: "Code console" };
@@ -235,6 +332,7 @@ function render() {
     html += `<div class="btn-row modes">${Object.keys(label).map((k) =>
       `<button class="btn ${m[k] ? "on" : ""}" data-action="mode" data-mode="${k}" aria-pressed="${m[k]}">${label[k]}: ${m[k] ? "on" : "off"}</button>`).join("")}</div>`;
   }
+
   $("controls").innerHTML = html;
   $("controls").onclick = onControl;
 
@@ -243,35 +341,14 @@ function render() {
   renderFeed($("feed"), g);
 
   $("crews").innerHTML = Object.entries(g.teams).map(([id, t]) => {
+    const yr = t.year ? `<span class="year-tag">${t.year}</span> ` : "";
     const names = Object.entries(g.players || {}).filter(([, p]) => p.team === id)
       .map(([uid, p]) => `${avatarOf(p.avatar) ? `<span class="av">${avatarOf(p.avatar)}</span>` : ""}${escapeHtml(p.name)}${rolesOn(g) ? ` <span class="role-tag" title="${captainOf(g, id) === uid ? "Captain, " : ""}${ROLES[roleOf(g, uid)].name}">${captainOf(g, id) === uid ? ROLES.captain.icon : ""}${ROLES[roleOf(g, uid)].icon}</span>` : ""}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
-    return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)} (${names.length}):</strong> ${names.join(", ") || "none yet"}</p>`;
+    return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${yr}${escapeHtml(t.name)} (${names.length}):</strong> ${names.join(", ") || "none yet"}</p>`;
   }).join("") + (() => {
     const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     return loose.length ? `<p><strong>No team:</strong> ${loose.join(", ")}</p>` : "";
   })();
-}
-
-// With crew roles on, this tab picks a random captain for each crew and fills empty jobs
-let captainsBusy = false;
-async function pickCaptains(g) {
-  if (captainsBusy || !rolesOn(g)) return;
-  captainsBusy = true;
-  try { await ensureCaptains(state.code, g); } finally { captainsBusy = false; }
-}
-
-function fmt(secs) { return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; }
-
-function stormControls(g) {
-  const lvl = g.storm || 0, max = maxStorm(g.settings);
-  const auto = g.settings.stormMins > 0;
-  const next = g.stormNextAt ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
-  return `<div class="btn-row storm-row">
-      <span class="storm-level">Storm ${lvl} of ${max}</span>
-      <button class="btn" data-action="storm" ${lvl >= max ? "disabled" : ""}>Close the storm in now</button>
-      ${auto && lvl < max ? `<button class="btn ${g.stormNextAt ? "on" : ""}" data-action="storm-auto" aria-pressed="${!!g.stormNextAt}">
-        Auto storm: ${g.stormNextAt ? `on, next in <span id="storm-left">${fmt(next)}</span>` : "paused"}</button>` : ""}
-    </div>`;
 }
 
 async function onControl(e) {
@@ -318,7 +395,20 @@ function startReloadClock() {
   clearInterval(state.timer);
   state.timer = setInterval(async () => {
     const g = state.game;
-    if (g) stormTick(g);
+    if (g) {
+      stormTick(g);
+      if (g.competition && g.competition.roundEndsAt && $("tb-timer")) {
+        const leftSecs = Math.max(0, Math.round((g.competition.roundEndsAt - Date.now()) / 1000));
+        $("tb-timer").textContent = fmt(leftSecs);
+        if (leftSecs === 0 && g.phase === "battle") {
+          $("tb-timer").classList.add("expired");
+        } else {
+          $("tb-timer").classList.remove("expired");
+        }
+      } else if ($("tb-timer")) {
+        $("tb-timer").textContent = "--:--";
+      }
+    }
     if (!g || g.phase !== "battle" || !state.autoReload || !(g.settings.reloadSecs > 0)) return;
     if (!state.nextReload) state.nextReload = Date.now() + g.settings.reloadSecs * 1000;
     const left = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));
@@ -338,4 +428,13 @@ function toast(text) {
   el.className = "toast show";
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (el.className = "toast"), 2400);
+}
+
+if ($("btn-timer-add")) {
+  $("btn-timer-add").onclick = async () => {
+    if (!state.game || !state.game.competition) return;
+    const ends = state.game.competition.roundEndsAt || (Date.now() + 60000);
+    await setRoundEndsAt(state.code, ends + 60000);
+    toast("+1 minute added to round clock.");
+  };
 }

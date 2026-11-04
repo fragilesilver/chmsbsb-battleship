@@ -3,12 +3,12 @@
 //  Read-only: shows the ocean without anyone's hidden ships.
 // ============================================================
 import { ensureSignedIn, watchGame, gameExists } from "./firebase.js";
-import { maxStorm, fleetComplete, avatarOf } from "./game.js";
+import { maxStorm, fleetComplete, avatarOf, YEAR_GROUPS, isCompetition, currentRoundNum, isGrandFinal, getAccumulatedStandings } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { sfx, muteButton } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { code: null, game: null, stop: null, feedSeen: null, qrFor: null };
+const state = { code: null, game: null, stop: null, feedSeen: null, qrFor: null, view: "ocean" };
 const baseUrl = location.href.replace(/projector\.html.*$/, "");
 
 muteButton($("mute"));
@@ -46,23 +46,125 @@ function render() {
   if (!g) return;
   playFeedSounds(g);
 
+  const isComp = isCompetition(g);
+  const rNum = currentRoundNum(g);
+  const isFinal = isGrandFinal(g);
+  const comp = g.competition || {};
+
+  // Update top HUD
+  if ($("proj-stage-badge")) {
+    $("proj-stage-badge").textContent = isFinal ? "🏆 GRAND FINALS" : `Round ${rNum} of ${comp.totalRounds || 3}`;
+    if (isFinal) $("proj-stage-badge").classList.add("gold");
+  }
+
+  // Update Match Timer
+  if ($("proj-match-timer")) {
+    if (g.competition && g.competition.roundEndsAt && g.phase === "battle") {
+      const leftSecs = Math.max(0, Math.round((g.competition.roundEndsAt - Date.now()) / 1000));
+      const m = Math.floor(leftSecs / 60);
+      const s = String(leftSecs % 60).padStart(2, "0");
+      $("proj-match-timer").textContent = `${m}:${s}`;
+      if (leftSecs <= 60) $("proj-match-timer").classList.add("urgent");
+      else $("proj-match-timer").classList.remove("urgent");
+    } else {
+      $("proj-match-timer").textContent = "--:--";
+      $("proj-match-timer").classList.remove("urgent");
+    }
+  }
+
   $("proj-join").innerHTML = g.phase === "battle" || g.phase === "finished"
     ? `Join at <strong>${escapeHtml(baseUrl.replace(/^https?:\/\//, ""))}</strong> with code <strong>${state.code}</strong>`
     : "";
 
   if (g.phase === "lobby" || g.phase === "placement") return renderLobby(g);
   show("battle");
+  updateViewMode();
+
   renderOcean($("ocean"), g, { revealAll: g.phase === "finished" });
   renderTeams($("teams"), g, null);
   renderFeed($("feed"), g);
   renderStorm(g);
+
+  // Render Mini & Full Leaderboards
+  renderProjectorStandings(g);
 
   const banner = $("winner");
   const w = g.phase === "finished" && g.winner && g.teams[g.winner];
   banner.hidden = !(g.phase === "finished");
   if (g.phase === "finished") {
     banner.style.setProperty("--tc", w ? w.color : "var(--ink)");
-    banner.innerHTML = w ? `<span class="pennant"></span><strong>${escapeHtml(w.name)} win!</strong> <span>Every ship is now shown.</span>` : `<strong>Game over</strong>`;
+    if (isFinal) {
+      banner.innerHTML = `<div class="podium-banner">
+        <span class="trophy-icon">🏆</span>
+        <h2>CHMS BSB BATTLE ROYALE CHAMPION</h2>
+        <h1>${escapeHtml(w ? w.name : "Grand Finals Champion")}</h1>
+        <p>Victory in the Ultimate Year 7, 8, 9 &amp; 10 Showdown!</p>
+      </div>`;
+    } else {
+      banner.innerHTML = w
+        ? `<span class="pennant"></span><strong>${escapeHtml(w.name)} win Round ${rNum}!</strong> <span>Scores accumulated. Next round up shortly!</span>`
+        : `<strong>Round ${rNum} Over</strong>`;
+    }
+  }
+}
+
+function renderProjectorStandings(g) {
+  const standings = getAccumulatedStandings(g);
+  const rNum = currentRoundNum(g);
+  const isFinal = isGrandFinal(g);
+
+  // Full Screen Standings Table
+  if ($("psv-table-wrap")) {
+    $("psv-table-wrap").innerHTML = `<table class="standings-table big-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Team</th>
+          <th>Division</th>
+          <th>Round 1</th>
+          <th>Round 2</th>
+          <th>Round 3</th>
+          <th>Live Round</th>
+          <th>Accumulated Total</th>
+          <th>Qualification Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${standings.map((s, idx) => {
+          const yrObj = YEAR_GROUPS.find((y) => y.id === s.year);
+          const yrLabel = yrObj ? yrObj.name : s.year;
+          return `<tr style="--tc:${s.color}">
+            <td><strong class="rank-badge">#${idx + 1}</strong></td>
+            <td><span class="pennant"></span><strong class="team-name-big">${escapeHtml(s.name)}</strong></td>
+            <td><span class="year-badge">${yrLabel}</span></td>
+            <td>${s.r1}</td>
+            <td>${s.r2}</td>
+            <td>${s.r3}</td>
+            <td>${s.liveRoundScore}</td>
+            <td><strong class="total-pts-big">${s.totalScore} pts</strong></td>
+            <td>
+              ${s.isYearTop ? '<span class="qual-badge-big">⭐ Top in ' + s.year + ' (Finals Bound)</span>' : ''}
+              ${s.alive ? `<span class="stat-afloat">${s.afloat} ships afloat</span>` : '<span class="stat-out">Fleet Sunk</span>'}
+            </td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`;
+  }
+
+  // Mini Leaderboard on Ocean View sidebar
+  if ($("proj-mini-leaderboard")) {
+    $("proj-mini-leaderboard").innerHTML = `<div class="mini-lead-box">
+      <h4>🏆 Accumulated Points</h4>
+      <ol class="mini-lead-list">
+        ${standings.slice(0, 4).map((s, i) => `
+          <li style="--tc:${s.color}">
+            <span class="ml-rank">#${i+1}</span>
+            <span class="ml-name">${escapeHtml(s.name)}</span>
+            <span class="ml-pts">${s.totalScore} pts</span>
+          </li>`).join("")}
+      </ol>
+    </div>`;
   }
 }
 
@@ -115,4 +217,17 @@ function playFeedSounds(g) {
   else if (types.has("storm")) sfx.storm();
   else if (types.has("hit")) sfx.hit();
   else if (types.has("power")) sfx.power();
+}
+
+if ($("proj-toggle-view")) {
+  $("proj-toggle-view").onclick = () => {
+    state.view = state.view === "ocean" ? "standings" : "ocean";
+    $("proj-toggle-view").textContent = state.view === "ocean" ? "Leaderboard" : "Ocean Map";
+    updateViewMode();
+  };
+}
+
+function updateViewMode() {
+  if ($("proj-view-ocean")) $("proj-view-ocean").hidden = state.view !== "ocean";
+  if ($("proj-view-standings")) $("proj-view-standings").hidden = state.view !== "standings";
 }

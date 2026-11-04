@@ -523,3 +523,138 @@ body.projector .axis { font-size: 1.1rem; }
 .qset-box { margin-top: .6rem; }
 .qset-box .qset-info { margin: .4rem 0 0; }
 .qset-errors { margin: .4rem 0 0; padding-left: 1.2rem; color: #a02020; font-size: .92rem; }
+
+/* ============================================================
+   CHMS BSB TOURNAMENT & BATTLE ROYALE COMPETITION STYLES
+   ============================================================ */
+.brand-wrap { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.student-round-tag, .proj-stage-badge {
+  display: inline-block; padding: .25rem .65rem; border-radius: 999px;
+  background: var(--ink); color: #fff; font: 700 .9rem/1 var(--display);
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.proj-stage-badge.gold { background: #c98a06; color: #14324a; }
+.student-score-tag {
+  display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .65rem;
+  background: var(--sea); border: 2px solid var(--ink); border-radius: 6px;
+  font: 700 1.05rem/1 var(--display);
+}
+.student-score-tag small { font-weight: 500; font-size: .85rem; color: var(--ink-soft); }
+
+/* Projector HUD Center */
+.proj-hud-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.proj-match-label { font: 700 .75rem/1 var(--display); text-transform: uppercase; color: var(--ink-soft); }
+.proj-match-timer {
+  font: 800 2.2rem/1 var(--display); letter-spacing: .08em; color: var(--ink);
+}
+.proj-match-timer.urgent { color: var(--hit); animation: pulseTimer 1s infinite alternate; }
+@keyframes pulseTimer { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+.btn.toggle-btn { padding: .35rem .75rem; font-size: .95rem; }
+
+/* Teacher Tourney Bar */
+.tourney-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 1rem; margin-bottom: 1.25rem; padding: .75rem 1.25rem;
+  background: var(--card); border: 2px solid var(--ink); border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+}
+.tb-left { display: flex; align-items: center; gap: .8rem; }
+.tb-badge {
+  display: inline-block; padding: .3rem .75rem; border-radius: 99px;
+  background: var(--ink); color: #fff; font: 700 1rem var(--display);
+}
+.tb-title { font: 700 1.2rem var(--display); color: var(--ink); }
+.tb-right { display: flex; align-items: center; gap: .6rem; }
+.tb-timer-label { font: 700 .9rem var(--display); color: var(--ink-soft); }
+.tb-timer { font: 800 1.6rem var(--display); color: var(--ink); min-width: 4.5rem; text-align: center; }
+.tb-timer.expired { color: var(--hit); }
+.btn-sm { padding: .25rem .5rem; font-size: .85rem; }
+
+/* Standings Table */
+.tourney-standings-card, .student-standings-card {
+  margin: 1.5rem 0; padding: 1rem 1.25rem; background: var(--card);
+  border: 2px solid var(--line); border-radius: 8px;
+}
+.tsc-head { margin-bottom: .8rem; }
+.tsc-head h3 { margin: 0 0 .2rem; }
+.table-wrap { overflow-x: auto; }
+.standings-table {
+  width: 100%; border-collapse: collapse; text-align: left; font-size: .95rem;
+}
+.standings-table th, .standings-table td {
+  padding: .6rem .8rem; border-bottom: 1px solid var(--line);
+}
+.standings-table th {
+  background: var(--sea); font: 700 .9rem var(--display);
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink);
+}
+.standings-table tr:hover { background: rgba(0,0,0,0.02); }
+.standings-table tr.me-row { background: #eef6f9; font-weight: 700; }
+.year-badge {
+  display: inline-block; padding: .15rem .45rem; border-radius: 4px;
+  background: var(--sea); font: 700 .82rem var(--display); border: 1px solid var(--line);
+}
+.qual-badge, .qual-badge-big {
+  display: inline-block; padding: .2rem .5rem; border-radius: 99px;
+  background: #fdf3d0; border: 1px solid #c98a06; color: #855b00;
+  font: 700 .85rem var(--display); white-space: nowrap; margin-right: .4rem;
+}
+.stat-afloat { color: #1f8a5b; font-weight: 700; }
+.stat-out { color: var(--hit); font-weight: 700; }
+.total-pts { font-size: 1.15rem; color: var(--ink); }
+
+/* Projector Standings Overlay */
+.proj-standings-view {
+  display: flex; justify-content: center; width: 100%; padding: 1.5rem 0;
+}
+.psv-card {
+  width: 100%; max-width: 1200px; background: var(--card);
+  border: 3px solid var(--ink); border-radius: 12px; padding: 1.5rem 2rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.psv-head h2 { font: 800 2.4rem/1.1 var(--display); margin: 0 0 .3rem; color: var(--ink); }
+.psv-head small { font-size: 1.2rem; color: var(--ink-soft); font-weight: 600; }
+.psv-desc { color: var(--ink-soft); font-size: 1.05rem; margin: 0 0 1.25rem; }
+.big-table th { font-size: 1.1rem; padding: .8rem 1rem; }
+.big-table td { font-size: 1.1rem; padding: .8rem 1rem; }
+.rank-badge { font: 800 1.4rem var(--display); }
+.team-name-big { font-size: 1.25rem; }
+.total-pts-big { font: 800 1.6rem var(--display); color: var(--ink); }
+.qual-badge-big { font-size: 1.05rem; padding: .3rem .75rem; }
+
+/* Mini Leaderboard on Ocean Sidebar */
+.mini-lead-box {
+  margin-bottom: 1rem; padding: .6rem .8rem; background: var(--card);
+  border: 2px solid var(--line); border-radius: 6px;
+}
+.mini-lead-box h4 { margin: 0 0 .4rem; font: 700 1.05rem var(--display); }
+.mini-lead-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .3rem; }
+.mini-lead-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  font-size: .95rem; font-weight: 700; padding: .25rem .4rem; border-left: 4px solid var(--tc);
+  background: var(--paper); border-radius: 0 4px 4px 0;
+}
+.ml-pts { font: 700 1rem var(--display); }
+
+/* Podium Banner */
+.podium-banner {
+  text-align: center; padding: 1.5rem 2rem; background: #fffdf5;
+  border: 3px solid #c98a06; border-radius: 12px;
+}
+.trophy-icon { font-size: 4rem; line-height: 1; display: block; margin-bottom: .5rem; }
+.podium-banner h2 { font: 800 1.8rem var(--display); color: #c98a06; margin: 0 0 .5rem; letter-spacing: .08em; }
+.podium-banner h1 { font: 800 3.2rem/1 var(--display); color: var(--ink); margin: 0 0 .5rem; }
+.podium-banner p { font-size: 1.2rem; color: var(--ink-soft); margin: 0; }
+
+/* Intermission and Qualify cards for Students */
+.intermission-box {
+  margin: .8rem 0; padding: .8rem 1rem; background: #fdf8e6;
+  border: 2px solid #c98a06; border-radius: 8px; text-align: center;
+}
+.qualify-celebrate {
+  margin: .8rem 0; padding: .9rem 1.2rem; background: #eaf8ef;
+  border: 2px solid #1f8a5b; border-radius: 8px; font-size: 1.15rem; color: #145939; text-align: center;
+}

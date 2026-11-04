@@ -1,0 +1,1496 @@
+{
+  "id": "cs-year9-topics",
+  "title": "Year 9 Computer Studies (CHMS BSB)",
+  "subject": "Computer Studies",
+  "exam": "CHMS BSB Year 9 / Cambridge Lower Secondary",
+  "uiLang": "en",
+  "features": {
+    "generated": true,
+    "torpedo": true,
+    "console": true
+  },
+  "rewards": {
+    "easy": 1,
+    "medium": 2,
+    "hard": 3
+  },
+  "questions": [
+    {
+      "id": "y9-hw-01",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which component of the Central Processing Unit (CPU) carries out mathematical calculations and logical comparisons?",
+      "options": [
+        "Arithmetic Logic Unit (ALU)",
+        "Control Unit (CU)",
+        "Program Counter (PC)",
+        "Memory Data Register (MDR)"
+      ],
+      "answer": 0,
+      "explain": "The Arithmetic Logic Unit (ALU) performs arithmetic operations (+, -, *, /) and logical decisions (AND, OR, NOT, comparisons)."
+    },
+    {
+      "id": "y9-hw-02",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What happens to data stored in RAM when the computer is turned off?",
+      "options": [
+        "It is retained permanently",
+        "It is lost because RAM is volatile",
+        "It is automatically backed up to ROM",
+        "It is compressed and saved to the cloud"
+      ],
+      "answer": 1,
+      "explain": "RAM (Random Access Memory) is volatile memory; all data held in it is lost when power is disconnected."
+    },
+    {
+      "id": "y9-hw-03",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What is the primary role of the Control Unit (CU) in the CPU?",
+      "options": [
+        "To store permanent user files",
+        "To manage and coordinate the execution of instructions",
+        "To convert alternating current into direct current",
+        "To display graphics on the monitor"
+      ],
+      "answer": 1,
+      "explain": "The Control Unit coordinates the CPU's activities by fetching, decoding, and managing the timing of instructions."
+    },
+    {
+      "id": "y9-hw-04",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which type of memory holds the bootstrap loader that boots up the computer?",
+      "options": [
+        "RAM",
+        "ROM",
+        "Cache",
+        "Virtual Memory"
+      ],
+      "answer": 1,
+      "explain": "ROM (Read Only Memory) is non-volatile and holds startup firmware (BIOS / bootstrap loader) that initializes hardware."
+    },
+    {
+      "id": "y9-hw-05",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which secondary storage technology uses magnetic platters to store data?",
+      "options": [
+        "Solid State Drive (SSD)",
+        "Hard Disk Drive (HDD)",
+        "Compact Disc (CD-ROM)",
+        "USB Flash Drive"
+      ],
+      "answer": 1,
+      "explain": "Hard Disk Drives (HDDs) use spinning magnetic platters and read/write heads to store data magnetically."
+    },
+    {
+      "id": "y9-hw-06",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Why are Solid State Drives (SSDs) generally faster and more durable than HDDs?",
+      "options": [
+        "SSDs have no moving mechanical parts",
+        "SSDs use higher voltage lasers",
+        "SSDs contain spinning glass platters",
+        "SSDs are directly built inside the CPU core"
+      ],
+      "answer": 0,
+      "explain": "SSDs use flash memory chips with zero moving parts, making them faster to access and much more resistant to physical shock."
+    },
+    {
+      "id": "y9-hw-07",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "In the Fetch-Decode-Execute cycle, which register holds the address of the next instruction to be fetched?",
+      "options": [
+        "Program Counter (PC)",
+        "Memory Data Register (MDR)",
+        "Current Instruction Register (CIR)",
+        "Accumulator (ACC)"
+      ],
+      "answer": 0,
+      "explain": "The Program Counter (PC) stores the memory address of the next instruction waiting to be fetched from RAM."
+    },
+    {
+      "id": "y9-hw-08",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What is the purpose of cache memory located inside or near the CPU?",
+      "options": [
+        "To store the operating system permanently",
+        "To provide high-speed temporary storage for frequently used instructions",
+        "To increase the capacity of the hard drive",
+        "To cool the CPU during intense processing"
+      ],
+      "answer": 1,
+      "explain": "Cache is extremely fast static RAM located close to the CPU to reduce latency by holding frequently accessed data."
+    },
+    {
+      "id": "y9-hw-09",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which computer bus is unidirectional and carries memory addresses from the CPU to RAM?",
+      "options": [
+        "Data bus",
+        "Address bus",
+        "Control bus",
+        "System bus"
+      ],
+      "answer": 1,
+      "explain": "The Address bus is unidirectional: the CPU sends the address of the memory location it wants to read from or write to."
+    },
+    {
+      "id": "y9-hw-10",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which device is classified as an actuator?",
+      "options": [
+        "Barcode reader",
+        "Electric motor / motor valve",
+        "Microphone",
+        "Touchscreen"
+      ],
+      "answer": 1,
+      "explain": "An actuator is an output device that converts an electrical signal into physical movement (e.g. motor, valve, robotic arm)."
+    },
+    {
+      "id": "y9-hw-11",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What happens when a computer runs out of physical RAM and uses Virtual Memory?",
+      "options": [
+        "RAM speed increases automatically",
+        "A portion of secondary storage is used as temporary RAM, which slows down performance",
+        "The CPU clock speed is doubled",
+        "The computer shuts down immediately to protect data"
+      ],
+      "answer": 1,
+      "explain": "Virtual memory pages data to secondary storage when RAM fills up; because storage is slower than RAM, disk thrashing can slow the system."
+    },
+    {
+      "id": "y9-hw-12",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which type of optical media uses a red laser and typically holds 4.7 GB of data?",
+      "options": [
+        "CD-ROM",
+        "DVD",
+        "Blu-ray",
+        "Floppy Disk"
+      ],
+      "answer": 1,
+      "explain": "A standard single-layer DVD holds 4.7 GB and uses a 650 nm red laser (compared to 700 MB for CDs and 25 GB for Blu-ray)."
+    },
+    {
+      "id": "y9-hw-13",
+      "level": "hard",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "During the fetch stage, the address in the PC is copied to which register before fetching from RAM?",
+      "options": [
+        "Memory Address Register (MAR)",
+        "Memory Data Register (MDR)",
+        "Accumulator (ACC)",
+        "Current Instruction Register (CIR)"
+      ],
+      "answer": 0,
+      "explain": "The contents of the PC are placed into the Memory Address Register (MAR), which points to the RAM address via the address bus."
+    },
+    {
+      "id": "y9-hw-14",
+      "level": "hard",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which factor most directly determines how many instructions a single CPU core can process per second?",
+      "options": [
+        "Storage capacity of the SSD",
+        "CPU Clock speed (measured in GHz)",
+        "Monitor refresh rate",
+        "Capacity of ROM"
+      ],
+      "answer": 1,
+      "explain": "Clock speed (measured in Gigahertz) defines the number of clock cycles per second; each cycle carries out CPU micro-operations."
+    },
+    {
+      "id": "y9-hw-15",
+      "level": "hard",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What is an embedded system?",
+      "options": [
+        "A general-purpose desktop computer running multiple operating systems",
+        "A dedicated computer system built into a larger mechanical or electrical device to perform a specific function",
+        "A supercomputer used exclusively for weather forecasting",
+        "An external hard drive connected via USB"
+      ],
+      "answer": 1,
+      "explain": "Embedded systems are specialized microcontrollers built into devices like washing machines, microwaves, and cars to perform dedicated tasks."
+    },
+    {
+      "id": "y9-hw-16",
+      "type": "typed",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What does CPU stand for? (Type the 3-word term)",
+      "accept": [
+        "Central Processing Unit",
+        "Central Processor Unit"
+      ],
+      "explain": "CPU stands for Central Processing Unit."
+    },
+    {
+      "id": "y9-hw-17",
+      "type": "typed",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What does RAM stand for? (Type the 3-word term)",
+      "accept": [
+        "Random Access Memory"
+      ],
+      "explain": "RAM stands for Random Access Memory."
+    },
+    {
+      "id": "y9-hw-18",
+      "type": "typed",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What 3-word architecture describes a CPU where programs and data share the same memory space?",
+      "accept": [
+        "Von Neumann",
+        "Von Neumann architecture"
+      ],
+      "explain": "The Von Neumann architecture uses a shared memory and shared bus for both program instructions and data."
+    },
+    {
+      "id": "y9-hw-19",
+      "type": "typed",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "What 3-letter acronym is given to memory that stores the BIOS and does not lose data when powered down?",
+      "accept": [
+        "ROM"
+      ],
+      "explain": "ROM stands for Read Only Memory."
+    },
+    {
+      "id": "y9-data-01",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "How many bits are in one standard byte?",
+      "options": [
+        "4",
+        "8",
+        "16",
+        "32"
+      ],
+      "answer": 1,
+      "explain": "1 byte = 8 bits. A group of 4 bits is called a nibble."
+    },
+    {
+      "id": "y9-data-02",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "Convert the 8-bit binary number 00001101 to denary.",
+      "options": [
+        "11",
+        "13",
+        "15",
+        "9"
+      ],
+      "answer": 1,
+      "explain": "Place values: 8 + 4 + 1 = 13 (8 + 4 + 0 + 1)."
+    },
+    {
+      "id": "y9-data-03",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "What is the denary value of the binary number 00100100?",
+      "options": [
+        "36",
+        "34",
+        "38",
+        "40"
+      ],
+      "answer": 0,
+      "explain": "Place values: 32 + 4 = 36."
+    },
+    {
+      "id": "y9-data-04",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "Which base is used by the hexadecimal number system?",
+      "options": [
+        "Base 2",
+        "Base 8",
+        "Base 10",
+        "Base 16"
+      ],
+      "answer": 3,
+      "explain": "Hexadecimal is base 16, using digits 0-9 and letters A-F."
+    },
+    {
+      "id": "y9-data-05",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "What denary number does the hexadecimal letter 'F' represent?",
+      "options": [
+        "14",
+        "15",
+        "16",
+        "10"
+      ],
+      "answer": 1,
+      "explain": "In hexadecimal: A=10, B=11, C=12, D=13, E=14, F=15."
+    },
+    {
+      "id": "y9-data-06",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "What is the smallest unit of digital data in computing?",
+      "options": [
+        "Byte",
+        "Bit",
+        "Nibble",
+        "Pixel"
+      ],
+      "answer": 1,
+      "explain": "A bit (binary digit) is the smallest unit of data, holding either 0 or 1."
+    },
+    {
+      "id": "y9-data-07",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "What is the result of adding the two 8-bit binary numbers 0101 + 0011?",
+      "options": [
+        "1000 (8)",
+        "0110 (6)",
+        "0111 (7)",
+        "1001 (9)"
+      ],
+      "answer": 0,
+      "explain": "5 (0101) + 3 (0011) = 8 (1000 in binary)."
+    },
+    {
+      "id": "y9-data-08",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "What error condition occurs when the result of a binary addition exceeds the maximum bits allocated (e.g. 8 bits)?",
+      "options": [
+        "Syntax error",
+        "Overflow error",
+        "Underflow error",
+        "Logical glitch"
+      ],
+      "answer": 1,
+      "explain": "An overflow error occurs when an arithmetic operation produces a number too large to fit in the given number of bits (e.g. 9th bit carry in an 8-bit register)."
+    },
+    {
+      "id": "y9-data-09",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "What happens to a binary number when you perform a logical shift left by 1 place?",
+      "options": [
+        "The value is divided by 2",
+        "The value is multiplied by 2",
+        "The value remains unchanged",
+        "The value is inverted"
+      ],
+      "answer": 1,
+      "explain": "A logical left shift by 1 position multiplies the binary number by 2 (adding a zero to the least significant bit)."
+    },
+    {
+      "id": "y9-data-10",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "Convert the denary number 43 into 8-bit binary.",
+      "options": [
+        "00101011",
+        "00101101",
+        "00110011",
+        "00101001"
+      ],
+      "answer": 0,
+      "explain": "43 = 32 + 8 + 2 + 1 = 00101011."
+    },
+    {
+      "id": "y9-data-11",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "How many different characters can standard 7-bit ASCII represent?",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512"
+      ],
+      "answer": 1,
+      "explain": "2^7 = 128 unique character codes (from 0 to 127)."
+    },
+    {
+      "id": "y9-data-12",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "Why was Unicode developed to replace standard ASCII?",
+      "options": [
+        "To make text files smaller in size",
+        "To represent characters from all worldwide languages and symbols",
+        "To encrypt text automatically",
+        "Because ASCII only works on Windows"
+      ],
+      "answer": 1,
+      "explain": "Unicode uses 16 or 32 bits (e.g. UTF-8, UTF-16) to support millions of characters, including Chinese, Arabic, emojis, and global alphabets."
+    },
+    {
+      "id": "y9-data-13",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "If an image has a colour depth of 8 bits per pixel, how many unique colours can each pixel display?",
+      "options": [
+        "8",
+        "16",
+        "256",
+        "65536"
+      ],
+      "answer": 2,
+      "explain": "2^8 = 256 colours per pixel."
+    },
+    {
+      "id": "y9-data-14",
+      "level": "hard",
+      "topic": "2 Data Representation",
+      "q": "Convert the 8-bit binary number 11001010 into hexadecimal.",
+      "options": [
+        "CA",
+        "BA",
+        "CB",
+        "DA"
+      ],
+      "answer": 0,
+      "explain": "Split into two 4-bit nibbles: 1100 = 12 ('C') and 1010 = 10 ('A'). Result is CA."
+    },
+    {
+      "id": "y9-data-15",
+      "level": "hard",
+      "topic": "2 Data Representation",
+      "q": "What two factors determine the file size and quality of a recorded digital audio sound file?",
+      "options": [
+        "Sample rate and Sample resolution (bit depth)",
+        "Speaker volume and microphone cable length",
+        "Screen resolution and refresh rate",
+        "CPU clock speed and bus width"
+      ],
+      "answer": 0,
+      "explain": "Sample rate (number of sound samples captured per second in Hz) and sample resolution (bits per sample) determine sound quality and file size."
+    },
+    {
+      "id": "y9-data-16",
+      "level": "hard",
+      "topic": "2 Data Representation",
+      "q": "What is the difference between lossy and lossless data compression?",
+      "options": [
+        "Lossy permanently discards unnecessary data; lossless reduces size without losing any original data",
+        "Lossless permanently removes pixels; lossy preserves all bits",
+        "Lossy can only compress text; lossless only compresses audio",
+        "Lossy makes file sizes larger than lossless"
+      ],
+      "answer": 0,
+      "explain": "Lossy compression (like MP3, JPEG) removes imperceptible data to reduce size, while lossless (like PNG, ZIP) reconstructs 100% of the original data."
+    },
+    {
+      "id": "y9-data-17",
+      "type": "typed",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "How many bits are in one nibble? (Type the digit)",
+      "accept": [
+        "4",
+        "four"
+      ],
+      "explain": "A nibble is exactly 4 bits (half of a byte)."
+    },
+    {
+      "id": "y9-data-18",
+      "type": "typed",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "What is the denary equivalent of the hexadecimal number 10?",
+      "accept": [
+        "16",
+        "sixteen"
+      ],
+      "explain": "In hexadecimal, 10 represents (1 * 16) + (0 * 1) = 16."
+    },
+    {
+      "id": "y9-data-19",
+      "type": "typed",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "What 5-letter term describes the extra data stored with an image file, such as dimensions, camera model, and date?",
+      "accept": [
+        "metadata",
+        "meta data"
+      ],
+      "explain": "Metadata is data about data (dimensions, author, date created, resolution)."
+    },
+    {
+      "id": "y9-data-20",
+      "type": "typed",
+      "level": "hard",
+      "topic": "2 Data Representation",
+      "q": "Convert the denary number 255 to hexadecimal. (Type 2 letters)",
+      "accept": [
+        "FF"
+      ],
+      "explain": "255 in hexadecimal is FF (15*16 + 15 = 255)."
+    },
+    {
+      "id": "y9-net-01",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "What does LAN stand for?",
+      "options": [
+        "Local Area Network",
+        "Large Access Node",
+        "Linked Audio Network",
+        "Limited Application Net"
+      ],
+      "answer": 0,
+      "explain": "LAN stands for Local Area Network, covering a small geographical area such as a school, office, or home."
+    },
+    {
+      "id": "y9-net-02",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "Which network type connects computers across a large geographical region, such as between cities or worldwide?",
+      "options": [
+        "LAN",
+        "WAN (Wide Area Network)",
+        "PAN (Personal Area Network)",
+        "SAN"
+      ],
+      "answer": 1,
+      "explain": "A WAN (Wide Area Network) connects devices across cities, countries, or the entire globe (e.g. the Internet)."
+    },
+    {
+      "id": "y9-net-03",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "In which network topology is every client device connected to a central switch or hub?",
+      "options": [
+        "Star topology",
+        "Bus topology",
+        "Ring topology",
+        "Mesh topology"
+      ],
+      "answer": 0,
+      "explain": "In a star topology, all nodes connect to a central device (switch or hub); if one cable fails, only that device is disconnected."
+    },
+    {
+      "id": "y9-net-04",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "Which hardware device connects different networks together and directs data packets across the Internet?",
+      "options": [
+        "Router",
+        "Repeater",
+        "Mouse",
+        "Monitor"
+      ],
+      "answer": 0,
+      "explain": "A router connects different networks (e.g. your home LAN to the ISP's WAN) and routes IP packets to their destinations."
+    },
+    {
+      "id": "y9-net-05",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "What transmission medium uses pulses of light traveling through glass fibers to transmit data at very high speeds?",
+      "options": [
+        "Fibre optic cable",
+        "Copper twisted-pair cable",
+        "Coaxial cable",
+        "Radio waves"
+      ],
+      "answer": 0,
+      "explain": "Fibre optic cables use pulses of light through thin glass strands, offering immense bandwidth over long distances without electrical interference."
+    },
+    {
+      "id": "y9-net-06",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What is the primary difference between a network Hub and a network Switch?",
+      "options": [
+        "A switch broadcasts packets to all ports, while a hub sends data only to the destination MAC address",
+        "A switch inspects MAC addresses and forwards data only to the intended recipient, while a hub broadcasts to all connected ports",
+        "A hub operates on fibre optics only, while a switch is wireless",
+        "A switch is an analog device, while a hub is digital"
+      ],
+      "answer": 1,
+      "explain": "A switch is intelligent: it learns MAC addresses and directs frames only to the designated device port, reducing collisions."
+    },
+    {
+      "id": "y9-net-07",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What unique physical hardware identifier is permanently embedded into a device's Network Interface Card (NIC)?",
+      "options": [
+        "IP address",
+        "MAC address",
+        "URL",
+        "Port number"
+      ],
+      "answer": 1,
+      "explain": "A MAC (Media Access Control) address is a unique 48-bit hexadecimal identifier assigned to the NIC during manufacturing."
+    },
+    {
+      "id": "y9-net-08",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What service translates human-readable web addresses (like www.chms.edu.bn) into numeric IP addresses?",
+      "options": [
+        "Domain Name System (DNS)",
+        "Dynamic Host Configuration (DHCP)",
+        "File Transfer Protocol (FTP)",
+        "Simple Mail Transfer (SMTP)"
+      ],
+      "answer": 0,
+      "explain": "DNS (Domain Name System) acts like the Internet's phonebook, resolving domain names into IP addresses."
+    },
+    {
+      "id": "y9-net-09",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "In a client-server network model, what is the role of the server?",
+      "options": [
+        "To request web pages from student laptops",
+        "To provide shared resources, data storage, and centralized security to client devices",
+        "To eliminate the need for network switches",
+        "To act solely as an electric power strip"
+      ],
+      "answer": 1,
+      "explain": "A server centralizes services, files, authentication, and database access for connected clients."
+    },
+    {
+      "id": "y9-net-10",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What is a major disadvantage of a bus network topology?",
+      "options": [
+        "If the main backbone cable breaks, the entire network fails",
+        "It requires the most cabling of any topology",
+        "It cannot function without a high-end central switch",
+        "It only allows one computer to connect at a time"
+      ],
+      "answer": 0,
+      "explain": "In a bus topology, all devices share a single backbone cable; a break in that cable brings down communication for all nodes."
+    },
+    {
+      "id": "y9-net-11",
+      "level": "hard",
+      "topic": "3 Networks & Communication",
+      "q": "How many bits are used in an IPv4 address compared to an IPv6 address?",
+      "options": [
+        "IPv4 uses 32 bits; IPv6 uses 128 bits",
+        "IPv4 uses 16 bits; IPv6 uses 64 bits",
+        "IPv4 uses 64 bits; IPv6 uses 256 bits",
+        "IPv4 uses 8 bits; IPv6 uses 32 bits"
+      ],
+      "answer": 0,
+      "explain": "IPv4 uses 32-bit addresses (approx 4.3 billion addresses), while IPv6 uses 128 bits to provide 340 undecillion addresses."
+    },
+    {
+      "id": "y9-net-12",
+      "level": "hard",
+      "topic": "3 Networks & Communication",
+      "q": "When data is transmitted over the Internet, it is broken down into smaller chunks called:",
+      "options": [
+        "Packets",
+        "Pixels",
+        "Registers",
+        "Tokens"
+      ],
+      "answer": 0,
+      "explain": "Packet switching breaks large data streams into packets containing payload, source/destination IP, sequence numbers, and checksums."
+    },
+    {
+      "id": "y9-net-13",
+      "level": "hard",
+      "topic": "3 Networks & Communication",
+      "q": "Which protocol is used to securely encrypt web communications between a browser and a web server?",
+      "options": [
+        "HTTP",
+        "HTTPS",
+        "FTP",
+        "POP3"
+      ],
+      "answer": 1,
+      "explain": "HTTPS (Hypertext Transfer Protocol Secure) encrypts data using TLS/SSL to safeguard credentials and personal data."
+    },
+    {
+      "id": "y9-net-14",
+      "type": "typed",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "What 3-letter acronym represents the unique hardware address burnt into every network card?",
+      "accept": [
+        "MAC",
+        "MAC address"
+      ],
+      "explain": "MAC stands for Media Access Control."
+    },
+    {
+      "id": "y9-net-15",
+      "type": "typed",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "What 3-letter abbreviation stands for World Wide Web?",
+      "accept": [
+        "WWW"
+      ],
+      "explain": "WWW stands for World Wide Web."
+    },
+    {
+      "id": "y9-net-16",
+      "type": "typed",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What 3-letter system translates domain names (e.g. google.com) into IP addresses?",
+      "accept": [
+        "DNS"
+      ],
+      "explain": "DNS stands for Domain Name System."
+    },
+    {
+      "id": "y9-net-17",
+      "type": "typed",
+      "level": "hard",
+      "topic": "3 Networks & Communication",
+      "q": "What network topology connects every computer directly to every other computer?",
+      "accept": [
+        "Mesh",
+        "Mesh topology",
+        "Full mesh"
+      ],
+      "explain": "In a full mesh topology, every node has a direct point-to-point connection to every other node."
+    },
+    {
+      "id": "y9-sec-01",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is phishing?",
+      "options": [
+        "Using fraudulent emails or fake websites to trick users into revealing sensitive passwords or financial details",
+        "Testing computer network speeds with sonar pings",
+        "Upgrading the firmware on a Wi-Fi router",
+        "Compressing image files to save storage space"
+      ],
+      "answer": 0,
+      "explain": "Phishing is a social engineering attack that disguises malicious messages as trustworthy to steal passwords or banking credentials."
+    },
+    {
+      "id": "y9-sec-02",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What type of malware locks a user's files with encryption and demands money to restore access?",
+      "options": [
+        "Spyware",
+        "Ransomware",
+        "Adware",
+        "Trojan horse"
+      ],
+      "answer": 1,
+      "explain": "Ransomware encrypts victim files and extorts a ransom payment in exchange for the decryption key."
+    },
+    {
+      "id": "y9-sec-03",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "Which security measure inspects incoming and outgoing network traffic and blocks unauthorized connections?",
+      "options": [
+        "Firewall",
+        "Defragmenter",
+        "Compiler",
+        "Screen saver"
+      ],
+      "answer": 0,
+      "explain": "A firewall monitors network traffic according to predefined security rules and blocks suspicious or unauthorized connections."
+    },
+    {
+      "id": "y9-sec-04",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "Which is an example of strong password practice?",
+      "options": [
+        "Using 'password123' on all school accounts",
+        "Using at least 12 characters combining uppercase, lowercase, numbers, and symbols",
+        "Sharing your password with your best friend",
+        "Writing your password on a sticky note attached to your monitor"
+      ],
+      "answer": 1,
+      "explain": "Strong passwords are long (12+ characters), complex, unique to each account, and never shared."
+    },
+    {
+      "id": "y9-sec-05",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is malware that disguises itself as legitimate software (such as a free game) to gain access to a computer?",
+      "options": [
+        "Trojan horse",
+        "Worm",
+        "Spyware",
+        "Cookie"
+      ],
+      "answer": 0,
+      "explain": "A Trojan horse pretends to be harmless or useful software to trick the user into installing it."
+    },
+    {
+      "id": "y9-sec-06",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is Two-Factor Authentication (2FA)?",
+      "options": [
+        "Entering your password twice consecutively",
+        "Requiring two separate evidence credentials to log in, such as a password plus a one-time code sent to your phone",
+        "Using two monitors while typing code",
+        "Sharing an account between two students"
+      ],
+      "answer": 1,
+      "explain": "2FA requires two distinct factors (e.g. something you know like a password, and something you have like an authenticator code/phone)."
+    },
+    {
+      "id": "y9-sec-07",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What type of malware can replicate and spread across a network independently without needing human interaction or a host file?",
+      "options": [
+        "Computer Worm",
+        "Macro virus",
+        "Trojan horse",
+        "Keylogger"
+      ],
+      "answer": 0,
+      "explain": "Unlike viruses that require a host file, worms are standalone programs that automatically replicate across networks via vulnerabilities."
+    },
+    {
+      "id": "y9-sec-08",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is the process of converting plaintext into unreadable ciphertext to protect data confidentiality?",
+      "options": [
+        "Compression",
+        "Encryption",
+        "Defragmentation",
+        "Virtualization"
+      ],
+      "answer": 1,
+      "explain": "Encryption scrambles readable plaintext into unreadable ciphertext using an encryption algorithm and key."
+    },
+    {
+      "id": "y9-sec-09",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What legal right grants creators exclusive control over the distribution and copying of their original software and digital work?",
+      "options": [
+        "Copyright",
+        "Open Source license",
+        "Fair Use waiver",
+        "Creative Commons attribution only"
+      ],
+      "answer": 0,
+      "explain": "Copyright protects original literary, artistic, and software creations from unauthorized copying, modification, or distribution."
+    },
+    {
+      "id": "y9-sec-10",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is a Denial of Service (DoS) attack?",
+      "options": [
+        "Flooding a network or web server with fake traffic so legitimate users cannot access the service",
+        "Deleting the BIOS from a motherboard",
+        "Stealing credit card numbers via keyboard logging",
+        "Resetting user passwords without permission"
+      ],
+      "answer": 0,
+      "explain": "A DoS (or distributed DDoS) attack overwhelms a server or network with excessive traffic, causing service disruption."
+    },
+    {
+      "id": "y9-sec-11",
+      "level": "hard",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is a keylogger?",
+      "options": [
+        "Software or hardware that covertly records every keystroke made on a keyboard to capture passwords and messages",
+        "A tool that generates strong 16-character passwords",
+        "A keyboard shortcut to lock the computer screen",
+        "A program that formats external flash drives"
+      ],
+      "answer": 0,
+      "explain": "A keylogger silently logs every key pressed by the user, exposing usernames, passwords, and private correspondence."
+    },
+    {
+      "id": "y9-sec-12",
+      "level": "hard",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What environmental hazard is associated with improper disposal of discarded computers and electronics?",
+      "options": [
+        "Toxic electronic waste (e-waste) leaching heavy metals like lead, mercury, and cadmium into soil and groundwater",
+        "Excessive release of helium gas into the atmosphere",
+        "Overproduction of magnetic tape",
+        "Depletion of internet bandwidth"
+      ],
+      "answer": 0,
+      "explain": "E-waste contains hazardous heavy metals (lead, mercury, cadmium) that can contaminate ecosystems if not recycled properly."
+    },
+    {
+      "id": "y9-sec-13",
+      "type": "typed",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What 3-letter acronym stands for Two-Factor Authentication?",
+      "accept": [
+        "2FA"
+      ],
+      "explain": "2FA stands for Two-Factor Authentication."
+    },
+    {
+      "id": "y9-sec-14",
+      "type": "typed",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is the general term for malicious software designed to harm or exploit computers?",
+      "accept": [
+        "malware"
+      ],
+      "explain": "Malware is a portmanteau of 'malicious software'."
+    },
+    {
+      "id": "y9-sec-15",
+      "type": "typed",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What term describes the scrambled, unreadable output produced after encrypting plaintext?",
+      "accept": [
+        "ciphertext",
+        "cipher text"
+      ],
+      "explain": "Plaintext is encrypted into ciphertext."
+    },
+    {
+      "id": "y9-sec-16",
+      "type": "typed",
+      "level": "hard",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What 4-letter acronym describes a distributed attack that floods a server with traffic until it crashes?",
+      "accept": [
+        "DDoS"
+      ],
+      "explain": "DDoS stands for Distributed Denial of Service."
+    },
+    {
+      "id": "y9-algo-01",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate outputs 1 only when BOTH inputs A and B are 1?",
+      "options": [
+        "AND gate",
+        "OR gate",
+        "NOT gate",
+        "XOR gate"
+      ],
+      "answer": 0,
+      "explain": "An AND gate outputs 1 if and only if all of its inputs are 1."
+    },
+    {
+      "id": "y9-algo-02",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate inverts its single input (1 becomes 0, 0 becomes 1)?",
+      "options": [
+        "NOT gate",
+        "OR gate",
+        "AND gate",
+        "NAND gate"
+      ],
+      "answer": 0,
+      "explain": "A NOT gate is an inverter: it takes a single input and flips its truth value."
+    },
+    {
+      "id": "y9-algo-03",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "In a flowchart, which standard symbol represents a decision with Yes/No branches?",
+      "options": [
+        "Diamond",
+        "Rectangle",
+        "Oval / Rounded rectangle",
+        "Parallelogram"
+      ],
+      "answer": 0,
+      "explain": "A diamond represents a conditional decision (e.g. Is X > 10?) with alternative branching paths."
+    },
+    {
+      "id": "y9-algo-04",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "In a flowchart, what do parallelograms represent?",
+      "options": [
+        "Input or Output operations",
+        "Process / calculation",
+        "Start or End terminator",
+        "Subroutine call"
+      ],
+      "answer": 0,
+      "explain": "Parallelograms represent Input (e.g. INPUT Age) and Output (e.g. OUTPUT Score)."
+    },
+    {
+      "id": "y9-algo-05",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which programming construct executes statements one after another in order?",
+      "options": [
+        "Sequence",
+        "Selection",
+        "Iteration",
+        "Recursion"
+      ],
+      "answer": 0,
+      "explain": "Sequence is the fundamental linear execution of programming steps one after the other."
+    },
+    {
+      "id": "y9-algo-06",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which data type would be best suited to store whether a player has won the game (TRUE or FALSE)?",
+      "options": [
+        "BOOLEAN",
+        "INTEGER",
+        "REAL",
+        "CHAR"
+      ],
+      "answer": 0,
+      "explain": "A BOOLEAN data type stores only two logical values: TRUE or FALSE."
+    },
+    {
+      "id": "y9-algo-07",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate outputs 1 if EITHER input A is 1, OR input B is 1, OR both are 1?",
+      "options": [
+        "OR gate",
+        "AND gate",
+        "NOT gate",
+        "NOR gate"
+      ],
+      "answer": 0,
+      "explain": "The standard inclusive OR gate outputs 1 whenever at least one of its inputs is 1."
+    },
+    {
+      "id": "y9-algo-08",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate outputs 1 when the inputs are DIFFERENT (one is 0, the other is 1), but 0 when they are the same?",
+      "options": [
+        "XOR (Exclusive OR)",
+        "AND",
+        "NAND",
+        "OR"
+      ],
+      "answer": 0,
+      "explain": "XOR (Exclusive OR) outputs 1 strictly when inputs differ (0 and 1, or 1 and 0)."
+    },
+    {
+      "id": "y9-algo-09",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "code": [
+        "Count ← 1",
+        "Total ← 0",
+        "WHILE Count <= 3 DO",
+        "    Total ← Total + Count",
+        "    Count ← Count + 1",
+        "ENDWHILE",
+        "OUTPUT Total"
+      ],
+      "q": "What is output by this algorithm?",
+      "options": [
+        "6",
+        "3",
+        "7",
+        "10"
+      ],
+      "answer": 0,
+      "explain": "Count takes values 1, 2, 3. Total becomes 0 + 1 + 2 + 3 = 6."
+    },
+    {
+      "id": "y9-algo-10",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the result of MOD(23, 5)?",
+      "options": [
+        "3",
+        "4",
+        "4.6",
+        "2"
+      ],
+      "answer": 0,
+      "explain": "MOD gives the remainder after division: 23 divided by 5 is 4 remainder 3."
+    },
+    {
+      "id": "y9-algo-11",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the result of DIV(23, 5)?",
+      "options": [
+        "4",
+        "3",
+        "4.6",
+        "5"
+      ],
+      "answer": 0,
+      "explain": "DIV performs integer division and returns the quotient without remainder: 23 DIV 5 = 4."
+    },
+    {
+      "id": "y9-algo-12",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "code": [
+        "Score ← 85",
+        "IF Score >= 80 THEN",
+        "    Grade ← \"A\"",
+        "ELSE",
+        "    Grade ← \"B\"",
+        "ENDIF",
+        "OUTPUT Grade"
+      ],
+      "q": "Which programming concept is demonstrated by this code?",
+      "options": [
+        "Selection",
+        "Iteration",
+        "Recursion",
+        "Inheritance"
+      ],
+      "answer": 0,
+      "explain": "Selection allows a program to choose between different execution branches based on a condition."
+    },
+    {
+      "id": "y9-algo-13",
+      "level": "hard",
+      "topic": "5 Algorithms, Logic & Programming",
+      "code": [
+        "A ← TRUE",
+        "B ← FALSE",
+        "Result ← (A AND NOT B) OR (NOT A AND B)",
+        "OUTPUT Result"
+      ],
+      "q": "What is the value of Result?",
+      "options": [
+        "TRUE",
+        "FALSE",
+        "ERROR",
+        "NULL"
+      ],
+      "answer": 0,
+      "explain": "A AND NOT B is TRUE AND TRUE = TRUE. Since the first clause is TRUE, the OR expression evaluates to TRUE."
+    },
+    {
+      "id": "y9-algo-14",
+      "level": "hard",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the key difference between a WHILE loop and a REPEAT...UNTIL loop in Cambridge pseudocode?",
+      "options": [
+        "A REPEAT loop tests its condition at the end and always executes at least once, while a WHILE loop tests at the start and may execute zero times",
+        "A WHILE loop can only repeat a fixed number of times",
+        "A REPEAT loop does not allow variables inside its body",
+        "There is no functional difference"
+      ],
+      "answer": 0,
+      "explain": "WHILE ... DO is pre-condition (checks first). REPEAT ... UNTIL is post-condition (runs once before checking)."
+    },
+    {
+      "id": "y9-algo-15",
+      "type": "typed",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the output of MOD(19, 4)? (Type the number)",
+      "accept": [
+        "3"
+      ],
+      "explain": "19 divided by 4 is 4 with remainder 3."
+    },
+    {
+      "id": "y9-algo-16",
+      "type": "typed",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the output of DIV(27, 6)? (Type the integer quotient)",
+      "accept": [
+        "4"
+      ],
+      "explain": "27 DIV 6 is 4 (since 4 * 6 = 24)."
+    },
+    {
+      "id": "y9-algo-17",
+      "type": "typed",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate produces output 0 only when both inputs are 1, and 1 for all other inputs?",
+      "accept": [
+        "NAND",
+        "NAND gate"
+      ],
+      "explain": "NAND is NOT AND: it outputs 0 only when both inputs are 1."
+    },
+    {
+      "id": "y9-algo-18",
+      "type": "typed",
+      "level": "hard",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What 5-letter term describes breaking down a complex problem into smaller, more manageable sub-problems?",
+      "accept": [
+        "decomposition",
+        "decompose"
+      ],
+      "explain": "Decomposition is a cornerstone computational thinking technique."
+    },
+    {
+      "id": "y9-hw-20",
+      "level": "easy",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Which device is an input device used to read printed optical stripes on retail goods?",
+      "options": [
+        "Barcode scanner",
+        "Laser printer",
+        "Projector",
+        "Actuator"
+      ],
+      "answer": 0,
+      "explain": "A barcode scanner reads black and white bars using light sensors to look up product data."
+    },
+    {
+      "id": "y9-hw-21",
+      "level": "medium",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "Why does increasing the number of CPU cores not always double processing speed?",
+      "options": [
+        "Cores must share system RAM bandwidth and software must be written for parallel multithreading",
+        "Cores cancel each other out electrically",
+        "Secondary storage shuts down when multiple cores run",
+        "Modern operating systems only recognize one core"
+      ],
+      "answer": 0,
+      "explain": "Performance gains depend on whether software is multi-threaded and not bottlenecked by shared memory/bus access."
+    },
+    {
+      "id": "y9-hw-22",
+      "level": "hard",
+      "topic": "1 Computer Systems & Hardware",
+      "q": "In the CPU, what is the role of the Accumulator (ACC)?",
+      "options": [
+        "To store the temporary results of arithmetic and logic operations executed by the ALU",
+        "To generate the master clock frequency",
+        "To hold the monitor pixel buffer",
+        "To convert digital signals to sound"
+      ],
+      "answer": 0,
+      "explain": "The Accumulator is a special register that temporarily stores the outcome of ALU calculations."
+    },
+    {
+      "id": "y9-data-21",
+      "level": "easy",
+      "topic": "2 Data Representation",
+      "q": "How many bytes are in exactly one Kilobyte (KB) in standard decimal metric units?",
+      "options": [
+        "1000 bytes",
+        "1024 bytes",
+        "512 bytes",
+        "8000 bytes"
+      ],
+      "answer": 0,
+      "explain": "In SI metric units, 1 Kilobyte (KB) = 1,000 bytes (whereas 1 Kibibyte KiB = 1024 bytes)."
+    },
+    {
+      "id": "y9-data-22",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "What is the denary value of the binary number 01100100?",
+      "options": [
+        "100",
+        "96",
+        "108",
+        "112"
+      ],
+      "answer": 0,
+      "explain": "64 + 32 + 4 = 100."
+    },
+    {
+      "id": "y9-data-23",
+      "level": "hard",
+      "topic": "2 Data Representation",
+      "q": "Calculate the uncompressed file size in bytes of a monochrome bitmap image (1 bit per pixel) with dimensions 800 x 600 pixels.",
+      "options": [
+        "60,000 bytes",
+        "480,000 bytes",
+        "600,000 bytes",
+        "80,000 bytes"
+      ],
+      "answer": 0,
+      "explain": "Total bits = 800 * 600 * 1 = 480,000 bits. Divided by 8 bits per byte = 60,000 bytes."
+    },
+    {
+      "id": "y9-data-24",
+      "type": "typed",
+      "level": "medium",
+      "topic": "2 Data Representation",
+      "q": "Convert the hexadecimal number 1A to denary.",
+      "accept": [
+        "26",
+        "twenty six",
+        "twenty-six"
+      ],
+      "explain": "1A in hex = (1 * 16) + 10 = 26."
+    },
+    {
+      "id": "y9-net-18",
+      "level": "easy",
+      "topic": "3 Networks & Communication",
+      "q": "What is bandwidth in computer networking?",
+      "options": [
+        "The maximum rate of data transfer across a network connection in a given time",
+        "The physical thickness of a network cable",
+        "The width of a computer screen in inches",
+        "The storage capacity of a cloud server"
+      ],
+      "answer": 0,
+      "explain": "Bandwidth measures the maximum data volume (bits per second) that can be transmitted over a communication channel."
+    },
+    {
+      "id": "y9-net-19",
+      "level": "medium",
+      "topic": "3 Networks & Communication",
+      "q": "What is latency in a network?",
+      "options": [
+        "The time delay it takes for a data packet to travel from source to destination",
+        "The amount of electrical power used by a router",
+        "The number of antennas on a wireless router",
+        "The price of an internet subscription"
+      ],
+      "answer": 0,
+      "explain": "Latency is the time lag (measured in milliseconds) taken for data to travel across a network."
+    },
+    {
+      "id": "y9-net-20",
+      "level": "hard",
+      "topic": "3 Networks & Communication",
+      "q": "Which protocol is responsible for reliably transmitting and reassembling data packets across networks?",
+      "options": [
+        "TCP (Transmission Control Protocol)",
+        "DNS",
+        "DHCP",
+        "ARP"
+      ],
+      "answer": 0,
+      "explain": "TCP breaks messages into packets, numbers them, ensures error-free delivery, and reassembles them at the destination."
+    },
+    {
+      "id": "y9-sec-17",
+      "level": "easy",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "Which practice helps protect data against unexpected hardware failure or ransomware loss?",
+      "options": [
+        "Regularly taking off-site or cloud backups of essential files",
+        "Leaving the computer on 24/7",
+        "Disabling operating system updates",
+        "Using the same password on all websites"
+      ],
+      "answer": 0,
+      "explain": "Maintaining regular, isolated backups ensures data can be recovered after a disaster or ransomware infection."
+    },
+    {
+      "id": "y9-sec-18",
+      "level": "medium",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is social engineering in the context of computer security?",
+      "options": [
+        "Psychologically manipulating people into disclosing confidential information or clicking malicious links",
+        "Building social media platforms using Python",
+        "Optimizing computer hardware for social networking",
+        "Installing antivirus software in a school lab"
+      ],
+      "answer": 0,
+      "explain": "Social engineering exploits human trust, curiosity, or fear rather than technical software bugs to steal credentials."
+    },
+    {
+      "id": "y9-sec-19",
+      "level": "hard",
+      "topic": "4 Cybersecurity, Safety & Ethics",
+      "q": "What is asymmetric encryption?",
+      "options": [
+        "Encryption using a public key to encrypt and a mathematically related private key to decrypt",
+        "Encryption that only works on odd-numbered days",
+        "Encryption where only one key is shared between both parties",
+        "Scrambling only vowels in a text message"
+      ],
+      "answer": 0,
+      "explain": "Asymmetric (public-key) cryptography uses a public key for encryption and a distinct private key for decryption."
+    },
+    {
+      "id": "y9-algo-19",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What is the purpose of a variable in a computer program?",
+      "options": [
+        "A named storage location in memory whose value can change during program execution",
+        "A permanent cable connecting the CPU to the printer",
+        "A constant value that cannot ever be modified",
+        "A comment ignored by the interpreter"
+      ],
+      "answer": 0,
+      "explain": "A variable is a named memory location that holds data that can change as the program runs."
+    },
+    {
+      "id": "y9-algo-20",
+      "level": "medium",
+      "topic": "5 Algorithms, Logic & Programming",
+      "code": [
+        "X ← 5",
+        "Y ← 12",
+        "Temp ← X",
+        "X ← Y",
+        "Y ← Temp",
+        "OUTPUT X"
+      ],
+      "q": "What is the value of X after executing these swap statements?",
+      "options": [
+        "12",
+        "5",
+        "17",
+        "7"
+      ],
+      "answer": 0,
+      "explain": "This is the classic 3-variable swap algorithm: X receives the original value of Y (12)."
+    },
+    {
+      "id": "y9-algo-21",
+      "level": "hard",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "Which logic gate produces an output of 0 ONLY when both inputs are 0, and 1 for all other inputs?",
+      "options": [
+        "OR gate",
+        "NOR gate",
+        "AND gate",
+        "XOR gate"
+      ],
+      "answer": 0,
+      "explain": "An inclusive OR gate outputs 0 only when both inputs are 0; otherwise it outputs 1."
+    },
+    {
+      "id": "y9-algo-22",
+      "type": "typed",
+      "level": "easy",
+      "topic": "5 Algorithms, Logic & Programming",
+      "q": "What 7-letter keyword is used to declare an unchangeable named value in Cambridge pseudocode?",
+      "accept": [
+        "CONSTANT"
+      ],
+      "explain": "CONSTANT defines a named identifier whose value cannot change during execution."
+    }
+  ]
+}

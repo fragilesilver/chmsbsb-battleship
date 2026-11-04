@@ -11,6 +11,7 @@ import {
   cellName, zoneOwner, cellKey, gridSize, colLabel,
   POWERUPS, airstrikeCells, sonarCells, maxStorm, crewBlock, torpedoTargets,
   ROLES, JOBS, rolesOn, crewOf, captainOf, roleOf, jobsOf, earnKind,
+  YEAR_GROUPS, isCompetition, currentRoundNum, isGrandFinal, getAccumulatedStandings,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { setForGame, modeAllowed, isTyped, checkTyped } from "./qsets.js";
@@ -136,6 +137,25 @@ function render() {
   if (!me) { show("join"); return; }
   const team = me.team && g.teams[me.team];
 
+  const isComp = isCompetition(g);
+  const rNum = currentRoundNum(g);
+  const isFinal = isGrandFinal(g);
+
+  if ($("student-round-tag")) {
+    $("student-round-tag").hidden = !isComp;
+    if (isComp) $("student-round-tag").textContent = isFinal ? "🏆 GRAND FINALS" : `Round ${rNum} of 3`;
+  }
+  if ($("student-score-tag") && team) {
+    $("student-score-tag").hidden = !isComp;
+    if (isComp) {
+      const standings = getAccumulatedStandings(g);
+      const myStanding = standings.find((s) => s.teamId === me.team);
+      const pts = myStanding ? myStanding.totalScore : 0;
+      const rank = myStanding ? standings.indexOf(myStanding) + 1 : 1;
+      $("student-score-tag").innerHTML = `<strong>${pts} pts</strong> <small>(#${rank})</small>`;
+    }
+  }
+
   $("who").innerHTML = team
     ? `<span class="pennant" style="--tc:${team.color}"></span>${avatarOf(me.avatar)} ${escapeHtml(me.name)}, ${escapeHtml(team.name)} <span class="code">Code ${state.code}</span>`
     : `${avatarOf(me.avatar)} ${escapeHtml(me.name)} <span class="code">Code ${state.code}</span>`;
@@ -165,6 +185,10 @@ function watchEvents(g, teamId) {
     seen.storm = g.storm || 0;
     seen.won = g.phase === "finished";
     return;
+  }
+  // If we transitioned to a new round placement/battle, reset won trigger
+  if ((g.phase === "placement" || g.phase === "battle") && seen.won) {
+    seen.won = false;
   }
   for (const [k, shot] of Object.entries(shots)) {
     if (seen.shots.has(k)) continue;
@@ -1037,21 +1061,90 @@ function leaveGame() {
 function renderFinished(g, teamId) {
   renderOcean($("ocean"), g, { myTeam: teamId, revealAll: true });
   const w = g.winner && g.teams[g.winner];
-  $("panel").innerHTML = `
-    <div class="winner" style="--tc:${w ? w.color : "var(--ink)"}">
+  const isComp = isCompetition(g);
+  const rNum = currentRoundNum(g);
+  const isFinal = isGrandFinal(g);
+  const standings = isComp ? getAccumulatedStandings(g) : [];
+  const myStanding = standings.find((s) => s.teamId === teamId);
+
+  let bannerHtml = "";
+  if (isComp) {
+    if (isFinal) {
+      bannerHtml = `<div class="winner" style="--tc:${w ? w.color : "var(--ink)"}">
+        <h2>🏆 CHMS BSB ULTIMATE CHAMPION!</h2>
+        <p class="big"><strong>${w ? escapeHtml(w.name) : "Champion"}</strong> wins the Grand Finals!</p>
+        <p>${w && g.winner === teamId ? "⭐ YOUR CREW WINS THE ENTIRE BATTLE ROYALE COMPETITION! ⭐" : "The Grand Finals have concluded. Spectacular effort by all year teams!"}</p>
+      </div>`;
+    } else if (rNum < 3) {
+      bannerHtml = `<div class="winner" style="--tc:${w ? w.color : "var(--ink)"}">
+        <h2>Round ${rNum} Finished!</h2>
+        <p>${w ? `<strong>${escapeHtml(w.name)}</strong> won Round ${rNum}.` : "Round complete."}</p>
+        <div class="intermission-box">
+          <p>⚡ <strong>Round ${rNum + 1} of 3 is starting soon!</strong></p>
+          <p class="hint">Keep this tab open. Your teacher will open fleet placement for the next round without you needing to re-enter any code.</p>
+        </div>
+      </div>`;
+    } else {
+      const myYear = (g.teams[teamId] && g.teams[teamId].year) || "Year";
+      const isTop = myStanding && myStanding.isYearTop;
+      bannerHtml = `<div class="winner" style="--tc:${w ? w.color : "var(--ink)"}">
+        <h2>Preliminaries Concluded!</h2>
+        <p>Best of 3 accumulated scores are locked in.</p>
+        ${isTop ? `<div class="qualify-celebrate">🎉 <strong>CONGRATULATIONS!</strong> Your crew is Champion of ${myYear} and advances to the <strong>GRAND FINALS</strong>! Get ready!</div>` : `<p>Top qualifiers from Year 7, 8, 9 &amp; 10 advance to the Grand Finals arena!</p>`}
+      </div>`;
+    }
+  } else {
+    bannerHtml = `<div class="winner" style="--tc:${w ? w.color : "var(--ink)"}">
       <h2>${w ? `${escapeHtml(w.name)} win!` : "Game over"}</h2>
       <p>${w && g.winner === teamId ? "Your crew is the last fleet afloat." : "Every ship is now shown on the chart."}</p>
-    </div>
-    <button class="btn primary wide" data-action="leave">Join a new game</button>
+    </div>`;
+  }
+
+  let standingsHtml = "";
+  if (isComp) {
+    standingsHtml = `<div class="student-standings-card">
+      <h3>🏆 Tournament Standings (Accumulated Points)</h3>
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Year</th>
+            <th>R1</th>
+            <th>R2</th>
+            <th>R3</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${standings.map((s, idx) => `
+            <tr class="${s.teamId === teamId ? "me-row" : ""}" style="--tc:${s.color}">
+              <td>#${idx + 1}</td>
+              <td><span class="pennant"></span>${escapeHtml(s.name)}${s.teamId === teamId ? " (you)" : ""}</td>
+              <td><span class="year-badge">${s.year}</span></td>
+              <td>${s.r1}</td>
+              <td>${s.r2}</td>
+              <td>${s.r3}</td>
+              <td><strong>${s.totalScore}</strong></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  $("panel").innerHTML = `
+    ${bannerHtml}
+    ${standingsHtml}
+    ${isComp && rNum < 3 ? '<p class="hint">Keep your devices ready for Round ' + (rNum + 1) + '.</p>' : '<button class="btn primary wide" data-action="leave">Join a new game</button>'}
     <h3>Teams</h3><ul class="teams" id="teams"></ul>
     <h3>Battle log</h3><ol class="feed" id="feed"></ol>`;
+
   renderTeams($("teams"), g, teamId);
   renderFeed($("feed"), g);
   $("panel").onclick = (e) => { if (e.target.closest('[data-action="leave"]')) leaveGame(); };
 }
 
 // ---------------- toast ----------------
-let toastTimer;
 function toast(text, kind = "") {
   const el = $("toast");
   el.textContent = text;

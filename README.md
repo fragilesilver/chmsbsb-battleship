@@ -1,168 +1,125 @@
-# CHMS Battleship Royale
+# CHMS BSB Battleship Royale Competition 🏆
 
-A classroom battle-royale version of Battleship. Teams share one big ocean and earn shots by solving Cambridge-style pseudocode problems (IGCSE / O Level 0478 / 2210). The last crew with a ship afloat wins.
+An inter-year classroom Battle Royale tournament system developed for **Chung Hwa Middle School, Bandar Seri Begawan (CHMS BSB)**. Teams in **Year 7, Year 8, Year 9, and Year 10** clash across a shared naval ocean, earning ammunition, torpedoes, and airstrikes by solving **Year 9 Computer Studies** problems.
 
-Students play on their own phones or laptops. The teacher runs the game from a dashboard, and the class watches the live chart on the projector.
-
-## Guides
-
-| Guide | For | What's in it |
-|---|---|---|
-| [Player's Guide](docs/PLAYERS_GUIDE.md) | Students | Joining, placing ships, reading the chart, the four ways to attack, power-ups, the storm, strategy tips |
-| [Pseudocode Lesson](docs/PSEUDOCODE_LESSON.md) | Students (and teachers planning lessons) | How to read and write pseudocode, from variables to loops, trace tables, `FIRE` patterns, practice questions with answers, and a quick reference card |
-| [Teacher's guide](#teachers-guide) | Teachers | Setting up, game settings and running a battle (below) |
+The competition features a **Best of 3 Rounds** preliminary stage with **accumulated scoring**, culminating in an epic **Grand Finals** showdown where the top champions from Year 7, 8, 9, and 10 battle for the **Ultimate Winner** crown.
 
 ---
 
-## Setup
+## 🏆 Competition Structure & Pacing (35–40 Minutes)
 
-Upload everything in this folder to the root of your GitHub Pages repo, keeping the `js/`, `css/` and `docs/` folders. Replace the old files.
+The competition is structured to last at least **30 minutes** with continuous engagement, seamless transitions, and transparent scoring:
 
-| Who | Opens |
-|---|---|
-| Students | `https://<your-username>.github.io/chms-battleship/` |
-| Teacher | `https://<your-username>.github.io/chms-battleship/teacher.html` |
-| Class screen | Press **Open projector view** on the teacher dashboard (`projector.html?code=XXXX`) |
-
-The game uses Firebase Realtime Database with anonymous sign-in, so students don't need accounts. The connection settings are in `js/firebase.js`.
-
----
-
-## Teacher's guide
-
-### 1. Create a game
-
-On `teacher.html`, choose:
-
-| Setting | What it does |
-|---|---|
-| **Number of teams** | 2 to 6, and each team's name |
-| **Crew sizes** | **Keep crews even** (on by default) stops a crew getting more than one student ahead of the smallest crew. **Most students per crew** sets a hard limit, with 0 for no limit. Students can leave a crew and pick another until the battle starts |
-| **Crew roles** | Off by default. When it's on, each crew gets a random captain who places the fleet and hands out jobs: gunner (the only one who fires), navigator (earns and uses sonar), scientist (earns and uses airstrikes) and crew (earn shots, suggest targets). You set how often the navigator and scientist can earn: every 15 and 90 seconds by default. Any job nobody has falls to the captain |
-| **Each team's home waters** | 6 × 6 up to 12 × 12 per team. The form shows the size of the whole ocean |
-| **Fleet** | How many of each ship every team gets: Battleship (5 squares), Carrier (4), Destroyer (3), Submarine (3), Patrol boat (2), with 0 to 4 of each. The default is one each of Carrier, Destroyer, Submarine and Patrol boat. The form warns you if the fleet won't fit |
-| **Ways to earn and fire shots** | Turn the question bank, torpedoes and the code console on or off. You can also change these during the game |
-| **Starting shots** | Shots each crew starts the battle with |
-| **Free shot every (seconds)** | Every crew gets a free shot on this timer. 0 turns it off |
-| **Torpedo reload (seconds)** | How long a student waits between torpedoes |
-| **Storm closes in every (minutes)** | 0 means the storm only moves when you press the button |
-
-With 3, 5 or 6 teams and home waters bigger than 8 × 8, the teams are arranged two zones across so the columns still fit within A to Z. Smaller waters and fewer ships make a shorter game.
-
-### 2. Run the game
-
-The dashboard walks through four phases:
-
-1. **Crews join.** Put the projector view on the board. It shows the join link, the code and a QR code. The crew list shows who has joined each team.
-2. **Fleet placement.** Press **Open fleet placement**. Crews place their ships and lock in. Any crew that isn't ready when you start gets a random fleet.
-3. **Battle.** Press **Start battle**. During the battle you can:
-   - give every crew +1 or +3 shots
-   - pause or restart the free-shot timer
-   - send a **supply drop** (a sonar and an airstrike for every crew)
-   - close the storm in now, or pause the automatic storm
-   - switch Questions, Torpedoes or the Code console on and off
-4. **Finished.** The game ends when one crew is left, or when you press **End game**.
-
-**Keep the teacher tab open during a battle.** It runs the free-shot timer and the automatic storm.
-
-**The teacher view shows every ship, so don't put it on the projector.** Use the projector view, which hides ships.
-
-On the projector, click once anywhere so the browser allows sound.
-
-The crew list shows each student's score as questions right out of questions answered. It's a quick way to see who needs help.
-
-### 3. Teaching with it
-
-- Before the first game, go through Parts 1 to 3 of the [Pseudocode Lesson](docs/PSEUDOCODE_LESSON.md) and the [Player's Guide](docs/PLAYERS_GUIDE.md).
-- To warm up, play with **only Questions** switched on.
-- Once the class has covered loops, switch on **Torpedoes** for tracing practice and the **Code console** for writing practice.
-- The lesson's practice questions and trace tables work as a starter or homework, and the answers are hidden in collapsible sections.
-
----
-
-## How the game works
-
-### Storm and power-ups
-The storm closes in from the edge one ring at a time. Ships inside the storm are shown on everyone's chart.
-Power-ups: 3 correct answers in a row earns the crew a sonar or an airstrike. Teachers can also send a supply drop.
-Sonar scans a 3 × 3 area (only that crew sees the result). Airstrike hits a square and its 4 neighbours.
-
-### Questions and torpedoes
-About half of the Earn shots questions come from the bank in `js/questions.js`. The rest are trace questions generated by `js/puzzles.js` (loops, MOD/DIV, string handling, swaps, AND/OR and more), with the answer worked out by the game's own interpreter.
-Torpedoes never miss: each one locks on to an unhit square of an enemy ship. Students unlock it by solving one of three puzzle types: find the square, predict the output, or fill in a missing number.
-
-### Crew roles
-Your tab picks the captains, so keep it open, as you already do for the storm and free-shot timers. It chooses a random captain for each crew when fleet placement opens, fills empty jobs when new students join a crew, and picks a new captain if the captain leaves. The crew list on your dashboard shows everyone's job.
-
-### Phones
-On phones the chart stays pinned to the top of the screen while the panel scrolls underneath. The −, Fit and + buttons, or a two-finger pinch, zoom the chart, and the letters and numbers stay visible while zoomed in.
-
-### Avatars
-Students pick an avatar when they join, and can change it in the lobby. Every ship a student places carries their avatar on its middle square. **Random** shares the ships out between the crew's avatars.
-
-### Pseudocode the code console understands
-`FIRE(column, row)`, for example `FIRE("C", 7)` or `FIRE(3, 7)`,
-`X ← value` (or `X <- value`), `CONSTANT`, `DECLARE` (skipped), `OUTPUT`, `IF/THEN/ELSE/ENDIF`, `FOR/TO/STEP/NEXT`,
-`WHILE/DO/ENDWHILE`, `REPEAT/UNTIL`, `AND/OR/NOT`, `DIV`, `MOD`, `ROUND`, `INT`, `LENGTH`, `UCASE`, `LCASE`, `SUBSTRING`, `&`.
-Not supported: arrays, `INPUT`, `CASE`, procedures and functions. A program stops after 5000 steps or 50 `FIRE` commands.
-
----
-
-## Editing the question bank
-Open `js/questions.js`. Each question is one block. Copy a block, change the text, and give it a new `id`.
-Put the correct answer in any position and set `answer` to its index (0 = first). Options are shuffled for students.
-Rewards: easy = 1 shot, medium = 2, hard = 3.
-
-## Files
-
-| File | What it does |
-|---|---|
-| `index.html`, `js/student.js` | Student app: join, pick a crew, place ships, battle |
-| `teacher.html`, `js/teacher.js` | Teacher dashboard |
-| `projector.html`, `js/projector.js` | Class screen (hides ships) |
-| `js/game.js` | Game rules: board layout, fleets, avatars, crew limits, torpedo targets, storm, power-ups |
-| `js/firebase.js` | Every database action |
-| `js/board.js` | Draws the ocean chart, team list and battle log |
-| `js/pseudocode.js` | The pseudocode interpreter |
-| `js/trace.js` | Builds "find the square" torpedo puzzles |
-| `js/puzzles.js` | Generates trace questions and "predict the output" / "fill the gap" torpedo puzzles |
-| `js/zoom.js` | Chart zoom buttons and pinch-to-zoom |
-| `js/questions.js` | The question bank |
-| `js/sound.js` | Sound effects (Web Audio, no files) |
-| `css/style.css` | All styling |
-| `docs/` | Player's Guide and Pseudocode Lesson |
-
----
-
-## Question sets (adaptive version)
-
-This copy of the game can switch subject and exam without code changes. When a teacher creates a game, the **Question set** box offers:
-
-- **Built-in sets**: `Bahasa Melayu PSR` (`data/bm-psr.json`), `Computer Science 2210 Revision (Ch 1-6)` (`data/cs-2210-revision.json`) and the original `Cambridge pseudocode` bank.
-  - `Computer Science 2210 Revision (Ch 1-6)` has 151 questions across: 1 Data representation, 2 Data transmission, 3 Hardware, 4 Software, 5 The internet and its uses, 6 Automated and emerging technologies. It includes typed questions for torpedoes, and has the pseudocode puzzles and console turned off.
-- **Upload**: a JSON or CSV file. It is checked on upload (errors are listed) and saved with the game.
-
-A set can turn features on or off. Sets without `generated` and `console` (like BM PSR and the 2210 revision set) hide the pseudocode puzzles and code console. Torpedoes then use the set's **typed** questions.
-
-### CSV format (`data/template.csv`)
-Header row, then one question per row. Columns: `level, topic, passage, question, A, B, C, D, answer, explain, accept`.
-- `level`: easy, medium or hard (1, 2 or 3 shots).
-- `answer`: `A`-`D`, `1`-`4`, or the exact text of the right option.
-- `passage`: optional reading text shown above the question (for comprehension).
-- Torpedo question: leave A-D empty and put the accepted answers in `accept`, separated by `|`.
-
-### JSON format
-```json
-{ "id": "my-set", "title": "…", "uiLang": "ms",
-  "features": { "generated": false, "torpedo": true, "console": false },
-  "rewards": { "easy": 1, "medium": 2, "hard": 3 },
-  "questions": [
-    { "id": "q1", "level": "easy", "topic": "Tatabahasa", "passage": "optional",
-      "q": "…", "options": ["a", "b", "c", "d"], "answer": 0, "explain": "…" },
-    { "id": "t1", "level": "hard", "type": "typed", "q": "…", "accept": ["answer", "other answer"], "explain": "…" }
-  ] }
 ```
-Typed answers ignore capital letters, accents and extra spaces. `uiLang` is `en` or `ms` and sets the language of in-game labels (`js/i18n.js`).
+                  CHMS BSB BATTLE ROYALE COMPETITION WORKFLOW
+                  
+     STAGE 1: INTER-CLASS PRELIMINARIES (BEST OF 3 ACCUMULATED ROUNDS)
+┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+│  YEAR 7 POOL   │  │  YEAR 8 POOL   │  │  YEAR 9 POOL   │  │  YEAR 10 POOL  │
+│  (R1, R2, R3)  │  │  (R1, R2, R3)  │  │  (R1, R2, R3)  │  │  (R1, R2, R3)  │
+└───────┬────────┘  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘
+        │                   │                   │                   │
+  Top Y7 Team         Top Y8 Team         Top Y9 Team        Top Y10 Team
+   (Y7 Champ)          (Y8 Champ)          (Y9 Champ)         (Y10 Champ)
+        │                   │                   │                   │
+        └───────────────────┴─────────┬─────────┴───────────────────┘
+                                      │
+                         STAGE 2: GRAND FINALS SHOWDOWN
+                    ┌───────────────────────────────────┐
+                    │ Y7 Top vs Y8 Top vs Y9 Top vs Y10 │
+                    │       4-Way Battle Royale         │
+                    └─────────────────┬─────────────────┘
+                                      │
+                         🏆 ULTIMATE CHAMPION CROWNED
+```
 
-### Running locally
-ES modules need a web server: run `python -m http.server 8000` in this folder, then open `http://localhost:8000/teacher.html`. It uses the same Firebase project as the original game; games are keyed by code, so they don't collide.
+### Event Schedule
+| Stage | Description | Duration |
+|---|---|---|
+| **Lobby & Briefing** | Students join on phones/laptops, pick avatars, form class crews | 3–4 mins |
+| **Stage 1: Round 1** | Fleet placement + Battle Royale (Combat & CS Questions) | 8 mins |
+| **Stage 1: Round 2** | Fleet placement + Battle Royale (Scores accumulate) | 8 mins |
+| **Stage 1: Round 3** | Final preliminary round (Finalizes accumulated scores) | 8 mins |
+| **Qualifier Ceremony** | Announcement of Year 7, 8, 9, and 10 Champions | 2–3 mins |
+| **Stage 2: Grand Finals** | 4-Way Championship Showdown (Y7 vs Y8 vs Y9 vs Y10) | 8–10 mins |
+| **Podium & Awards** | Crowning the CHMS BSB Ultimate Champion | 2 mins |
+| **Total Event Time** | **Complete School Competition Event** | **~38–42 minutes** |
+
+---
+
+## 📊 Accumulated Scoring Formula
+
+Points accumulate across Rounds 1, 2, and 3:
+
+$$\text{Total Score} = \text{Round 1 Points} + \text{Round 2 Points} + \text{Round 3 Points}$$
+
+### 1. Academic Points (Year 9 Computer Studies)
+- **Easy Question**: `+10 pts` (Earns 1 shot)
+- **Medium Question**: `+20 pts` (Earns 2 shots)
+- **Hard Question**: `+30 pts` (Earns 3 shots)
+- **Streak Bonus**: `+25 pts` (3 correct answers in a row, also awards Sonar or Airstrike)
+
+### 2. Combat Points (Naval Warfare)
+- **Hit on Enemy Ship**: `+25 pts`
+- **Sinking a Patrol Boat (2 squares)**: `+50 pts`
+- **Sinking a Submarine / Destroyer (3 squares)**: `+75 pts`
+- **Sinking a Carrier (4 squares)**: `+100 pts`
+- **Sinking a Battleship (5 squares)**: `+125 pts`
+- **Wiping out an Enemy Fleet (Elimination)**: `+200 pts`
+
+### 3. Round Survival & Placement Points
+- **1st Place (Winner / Last Fleet Afloat)**: `+300 pts`
+- **2nd Place**: `+200 pts`
+- **3rd Place**: `+100 pts`
+- **4th Place**: `+50 pts`
+
+---
+
+## 💻 Year 9 Computer Studies Curriculum Topics
+
+The default question bank (`data/cs-year9-topics.json`) features **107 curriculum-aligned questions** (85 MCQs + 22 typed torpedo questions) covering:
+
+1. **Computer Systems & Hardware**: CPU architecture, Von Neumann model, ALU, Control Unit, Registers (PC, MAR, MDR, ACC), Fetch-Decode-Execute cycle, RAM vs ROM, Secondary Storage (Magnetic, Optical, SSD), Cache memory, Actuators, Embedded systems.
+2. **Data Representation & Number Systems**: Binary, Denary, Hexadecimal conversions, 8-bit binary addition & overflow, Logical shifts, Storage units (bit to TB), ASCII vs Unicode, Pixel resolution, Colour depth, Sound sample rate, Lossy vs Lossless compression.
+3. **Networks & Communication**: LAN vs WAN, Star / Bus / Mesh topologies, Routers, Switches, Hubs, MAC addresses, IP addresses (IPv4 vs IPv6), DNS, Packet switching, Client-Server model, Fibre optics.
+4. **Cybersecurity, Safety & Ethics**: Malware (Viruses, Worms, Trojans, Ransomware, Spyware, Keyloggers), Phishing, Firewalls, Two-Factor Authentication (2FA), Strong passwords, Encryption (plaintext to ciphertext), Copyright, E-waste.
+5. **Algorithms, Logic Gates & Programming Concepts**: Logic gates (AND, OR, NOT, NAND, XOR), Flowchart symbols (Input/Output parallelograms, Decision diamonds), Sequence, Selection (`IF-THEN-ELSE`), Iteration (`WHILE-DO`, `FOR-TO`, `REPEAT-UNTIL`), Variables, Data types, `DIV` and `MOD` arithmetic.
+
+---
+
+## 🚀 Setup & Launch Guide
+
+Host the repository on GitHub Pages or any static web server:
+
+| Role | Access URL | Purpose |
+|---|---|---|
+| **Students** | `https://fragilesilver.github.io/chmsbsb-battleship/` | Join game, pick crew, place ships, fire, earn shots |
+| **Teacher** | `https://fragilesilver.github.io/chmsbsb-battleship/teacher.html` | Tournament setup, round manager, match clock, phase controls |
+| **Hall / Class Projector** | `https://fragilesilver.github.io/chmsbsb-battleship/projector.html?code=XXXX` | Full-screen ocean radar, match countdown clock, live leaderboard |
+
+### Teacher Tournament Management:
+1. Open `teacher.html` and click **Create game** (Year 9 Computer Studies and 4 Divisions are selected by default).
+2. Project `projector.html?code=XXXX` onto the screen. Students scan the QR code or enter the 4-letter code.
+3. Click **Open fleet placement** $\rightarrow$ crews place their fleets on their phones.
+4. Click **Start battle** $\rightarrow$ Round 1 begins with live match clock and real-time accumulated scoring.
+5. When a round finishes, click **Start Round 2 of 3 (Keep Crews)** $\rightarrow$ the system seamlessly opens placement for Round 2 without students needing to re-enter room codes!
+6. After Round 3 concludes, the system flags the top team from Year 7, 8, 9, and 10. Click **Launch Grand Finals** for the ultimate 4-way championship battle!
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Frontend**: Vanilla JavaScript (ES Modules), HTML5, CSS3 with responsive grid layout and CSS Custom Properties.
+- **Backend / Real-time Sync**: Firebase Realtime Database (with anonymous authentication and atomic transactions).
+- **Sound Effects**: HTML5 Web Audio API synthesizer (zero external audio file dependencies).
+- **QR Code Generation**: Client-side qrcode.js.
+
+---
+
+## 📜 Repository & Remote
+
+Target repository:
+```bash
+https://github.com/fragilesilver/chmsbsb-battleship.git
+```
+Branch: `main`

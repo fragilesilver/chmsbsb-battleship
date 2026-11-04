@@ -48,6 +48,24 @@
             </label>
           </div>
         </fieldset>
+        <fieldset class="comp-fieldset">
+          <legend>CHMS BSB Tournament Settings</legend>
+          <label class="check">
+            <input type="checkbox" id="comp-mode" checked>
+            <strong>Enable Tournament Mode (Best of 3 Rounds + Grand Finals)</strong>
+          </label>
+          <div class="two-col" id="comp-settings">
+            <label>Round duration (minutes, minimum 30 min total across competition)
+              <input id="round-duration" type="number" min="3" max="25" value="8">
+            </label>
+            <label>Tournament format
+              <select id="comp-format">
+                <option value="y7-y10" selected>4 Divisions (Year 7, 8, 9, 10) &rarr; Grand Finals</option>
+                <option value="standard">Open Inter-Class</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
         <fieldset>
           <legend>Map and fleet</legend>
           <label>Each team's home waters
@@ -120,12 +138,32 @@
         <a class="btn" id="projector-link" target="_blank" rel="noopener">Open projector view</a>
       </div>
 
+      <div class="tourney-bar" id="tourney-bar">
+        <div class="tb-left">
+          <span class="tb-badge" id="tb-badge">Round 1 of 3</span>
+          <span class="tb-title" id="tb-title">Year Preliminaries</span>
+        </div>
+        <div class="tb-right">
+          <span class="tb-timer-label">Match Clock:</span>
+          <span class="tb-timer" id="tb-timer">--:--</span>
+          <button class="btn btn-sm" id="btn-timer-add" type="button" title="Add 1 minute">+1m</button>
+        </div>
+      </div>
+
       <ol class="phases" id="phases">
         <li data-p="lobby">Crews join</li>
         <li data-p="placement">Fleet placement</li>
         <li data-p="battle">Battle</li>
         <li data-p="finished">Finished</li>
       </ol>
+
+      <section class="tourney-standings-card" id="tourney-standings-card">
+        <div class="tsc-head">
+          <h3>🏆 Live Tournament Standings <small>(Accumulated Scores across 3 Rounds)</small></h3>
+          <span class="hint">Top team in Y7, Y8, Y9 &amp; Y10 qualify for Grand Finals</span>
+        </div>
+        <div class="table-wrap" id="standings-table-wrap"></div>
+      </section>
 
       <div class="control-grid">
         <div>
