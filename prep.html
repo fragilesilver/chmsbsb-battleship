@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Championship Prep | CHMS Battleship</title>
+  <meta name="description" content="A 7-day guide for CHMS BSB students: learn the game, revise General ICT and practise with your crew before the Battleship competition.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/prep.css">
+</head>
+<body class="prep">
+  <header class="topbar">
+    <h1 class="brand">Championship Prep <small>CHMS BSB</small></h1>
+    <a class="btn" href="index.html">Go to the game</a>
+  </header>
+
+  <nav class="prep-nav" aria-label="On this page">
+    <a href="#plan">7-day plan</a>
+    <a href="#year">Your year</a>
+    <a href="#game">The game</a>
+    <a href="#hunt">Practice hunt</a>
+    <a href="#revise">Revise ICT</a>
+    <a href="#crew">Your crew</a>
+    <a href="#day">On the day</a>
+  </nav>
+
+  <main class="prep-main">
+    <section class="hero">
+      <p class="eyebrow">Chung Hwa Middle School Bandar Seri Begawan</p>
+      <h2>Gamification BattleShip Competition 2026</h2>
+      <p class="lead">Right answers load your guns. Good aim sinks fleets. Use this guide to learn the game, revise General ICT and get your crew ready.</p>
+      <div class="btn-row">
+        <a class="btn primary" href="#plan">Start the 7-day plan</a>
+        <a class="btn" href="#revise">Jump to revision</a>
+      </div>
+      <dl class="facts">
+        <div><dt>3</dt><dd>rounds for each year</dd></div>
+        <div><dt>8</dt><dd>ICT topics to revise</dd></div>
+        <div><dt>1</dt><dd>champion crew from each year</dd></div>
+        <div><dt>1</dt><dd>Grand Final for the title</dd></div>
+      </dl>
+    </section>
+
+    <section id="plan" class="block">
+      <h2>Your 7-day plan</h2>
+      <p>Each day takes about 20 minutes. Tick off each day as you finish. Your ticks are saved on this device only. Short on time? Do Days 1 and 7, then the topics you find hardest.</p>
+      <p class="progress" id="plan-progress" role="status"></p>
+      <ol class="plan" id="plan-list"></ol>
+    </section>
+
+    <section id="year" class="block">
+      <h2>What your year will face</h2>
+      <p>Every year gets questions on the same 8 topics, but the mix of easy, medium and hard questions changes. Pick your year to see what to focus on.</p>
+      <div class="year-picker" id="year-picker" role="group" aria-label="Choose your year"></div>
+      <p class="year-focus" id="year-focus" role="status"></p>
+      <div class="mix" id="mix"></div>
+      <p class="key"><span class="swatch easy"></span> Easy: 1 shot, +10 points <span class="swatch medium"></span> Medium: 2 shots, +20 points <span class="swatch hard"></span> Hard: 3 shots, +30 points</p>
+    </section>
+
+    <section id="game" class="block">
+      <h2>How the game works</h2>
+      <p>Your crew shares one fleet on a big ocean with the other crews in your year. Earn shots by answering questions, hunt down the other fleets, and try to be the last crew afloat.</p>
+      <ol class="flow">
+        <li><h3>Join</h3><p>Scan your year's QR code on the hall screen, or type its 4-letter code. Enter your names and pick an avatar.</p></li>
+        <li><h3>Choose your crew</h3><p>Tap the crew your teacher gave you. If you pick the wrong one, press <b>Leave this crew</b> before the battle starts.</p></li>
+        <li><h3>Hide your fleet</h3><p>Place your ships in your bright home waters, or press <b>Random</b>. Then press <b>Lock in fleet</b>.</p></li>
+        <li><h3>Earn shots</h3><p>Answer questions in the <b>Earn shots</b> tab. A crew shares its shots and can hold up to 8. A wrong answer means a 10-second wait.</p></li>
+        <li><h3>Attack</h3><p>Tap a square in another crew's waters and press <b>Fire</b>. Squares are named column then row, so C7 is column C, row 7.</p></li>
+        <li><h3>Survive</h3><p>The storm closes in from the edges and exposes ships to every crew. The round ends when one crew is left or the clock runs out.</p></li>
+      </ol>
+
+      <h3 class="sub">Your three weapons</h3>
+      <div class="cards three">
+        <article class="card"><h4>Shot</h4><p>Uses 1 shot. It can hit or miss.</p></article>
+        <article class="card"><h4>Torpedo</h4><p>Uses no shots. Type the right answer and it never misses. Get it wrong and the torpedo is lost.</p></article>
+        <article class="card"><h4>Power-up</h4><p>Answer 3 in a row to earn one. A <b>sonar</b> scans a 3 × 3 area, and an <b>airstrike</b> hits a + shape of 5 squares.</p></article>
+      </div>
+      <p class="note">In the competition, each whole crew is normally limited to one shot every 15 seconds, one torpedo every 60 seconds and one power-up every 120 seconds. You can keep answering while you wait, because answers still score points. Each round normally lasts 8 minutes.</p>
+
+      <h3 class="sub">How you score</h3>
+      <div class="cards three">
+        <article class="card"><h4>Answers</h4><ul class="points"><li>Easy <b>+10</b></li><li>Medium <b>+20</b></li><li>Hard <b>+30</b></li><li>3 in a row <b>+25</b></li></ul></article>
+        <article class="card"><h4>Combat</h4><ul class="points"><li>Hit <b>+25</b></li><li>Sink a ship <b>+50 to +125</b></li><li>Wipe out a fleet <b>+200</b></li></ul></article>
+        <article class="card"><h4>Round placing</h4><ul class="points"><li>1st <b>+300</b></li><li>2nd <b>+200</b></li><li>3rd <b>+100</b></li><li>4th and below <b>+50</b></li></ul></article>
+      </div>
+      <p>Points from all 3 rounds add up, and the crew with the highest total is your year's champion. In the Grand Final, the four champions start again on zero and play one deciding round.</p>
+    </section>
+
+    <section id="hunt" class="block">
+      <h2>Practice hunt</h2>
+      <p>Two enemy ships are hiding: one 3 squares long and one 2 squares long. Sink both in as few shots as you can. Ships are at least 2 squares long, so firing at every other square will always find them.</p>
+      <div class="hunt">
+        <div class="hunt-board" id="hunt-board"></div>
+        <div class="hunt-side">
+          <p class="hunt-status" id="hunt-status" role="status">Tap any square to fire.</p>
+          <p class="hunt-count">Shots fired: <b id="hunt-shots">0</b></p>
+          <label class="check"><input type="checkbox" id="hunt-pattern"> Show the every-other-square pattern</label>
+          <button class="btn" id="hunt-new" type="button">New hunt</button>
+          <p class="hint"><b>Tip:</b> after a hit, try the squares above, below, left and right to find which way the ship lies.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="revise" class="block">
+      <h2>Revise General ICT</h2>
+      <p>Open a topic, learn the notes from <b>Start here</b> upwards, then try the practice questions. These aren't the competition's questions, so learn the ideas rather than the answers. Typed questions work like torpedoes: type a short answer. Capital letters don't matter.</p>
+      <div class="topics" id="topics"></div>
+    </section>
+
+    <section id="crew" class="block">
+      <h2>Work as a crew</h2>
+      <p>You'll probably share one device with your group. Give everyone a job so that nobody just watches.</p>
+      <div class="cards three">
+        <article class="card"><h4>The reader</h4><p>Reads each question aloud and leads the discussion. Remember that a wrong answer costs 10 seconds.</p></article>
+        <article class="card"><h4>The spotter</h4><p>Watches the chart and battle log, and chooses the next target.</p></article>
+        <article class="card"><h4>The driver</h4><p>Holds the device and taps. Swap jobs between rounds so that everyone gets a turn.</p></article>
+      </div>
+      <h3 class="sub">Battle tips</h3>
+      <ul class="tips">
+        <li><b>Spread your ships.</b> Mix across and down, and don't line them all up.</li>
+        <li><b>Stay away from the edge.</b> The storm starts at the outside, so ships nearer the middle of the ocean stay hidden longer.</li>
+        <li><b>Spend your shots.</b> At 8 shots you can't earn more, so a full crew should fire.</li>
+        <li><b>Keep answering while reloading.</b> Your crew can only fire every so often, but answers still score.</li>
+        <li><b>Use a sonar before an airstrike.</b> Aim the airstrike at the orange diamonds that your sonar finds.</li>
+        <li><b>Talk across your crew.</b> Shots are shared with every group in it, so agree on targets and who fires next.</li>
+        <li><b>Read the battle log.</b> A crew that's losing ships fast may be easy to finish off.</li>
+      </ul>
+    </section>
+
+    <section id="day" class="block">
+      <h2>On the day</h2>
+      <ul class="checks">
+        <li>Charge your device, and bring your charger if your teacher allows it.</li>
+        <li>Know your group and which crew your teacher has given you.</li>
+        <li>Connect to the Wi-Fi your teacher tells you to use.</li>
+        <li>Use one device per group and close your other tabs. The game has a connection limit, so every open tab counts.</li>
+        <li>Use your own year's code from the hall screen.</li>
+        <li>If your page refreshes or your device sleeps, open the link again. The game remembers you.</li>
+      </ul>
+      <p class="note">Your teachers may change some settings on the day. If they tell you something different from this page, follow your teachers. Want more detail? Read the <a href="https://github.com/fragilesilver/chmsbsb-battleship/blob/main/docs/PLAYERS_GUIDE.md">full player's guide</a>.</p>
+      <p class="good-luck">Good hunting, Captain!</p>
+    </section>
+  </main>
+
+  <script type="module" src="js/prep.js"></script>
+</body>
+</html>
