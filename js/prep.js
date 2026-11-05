@@ -60,11 +60,11 @@ function renderPlan() {
 
 // ---------- year focus ----------
 const YEARS = [
-  { id: "Y7", name: "Year 7", mix: [60, 30, 10], focus: "Year 7: most questions are easy, so master Start here in every topic first. Then move on to Level up." },
-  { id: "Y8", name: "Year 8", mix: [50, 35, 15], focus: "Year 8: half your questions are easy. Know Start here well, then spend most of your time on Level up." },
-  { id: "Y9", name: "Year 9", mix: [35, 40, 25], focus: "Year 9: medium questions are the most common. Make Level up your main target, and learn Champion too." },
-  { id: "Y10", name: "Year 10", mix: [25, 40, 35], focus: "Year 10: three in every four questions are medium or hard. Check Start here quickly, then concentrate on Level up and Champion." },
-  { id: "final", name: "Grand Final", mix: [34, 33, 33], focus: "Grand Final: an even mix of easy, medium and hard, so every level matters. Revise all three." },
+  { id: "Y7", name: "Year 7", mix: [60, 30, 10], focus: "Year 7 plays on Wednesday 18 November. Most questions are easy, so master Start here in every topic first. Then move on to Level up." },
+  { id: "Y8", name: "Year 8", mix: [50, 35, 15], focus: "Year 8 plays on Wednesday 18 November. Half your questions are easy. Know Start here well, then spend most of your time on Level up." },
+  { id: "Y9", name: "Year 9", mix: [35, 40, 25], focus: "Year 9 plays on Tuesday 10 November. Medium questions are the most common. Make Level up your main target, and learn Champion too." },
+  { id: "Y10", name: "Year 10", mix: [25, 40, 35], focus: "Year 10 plays on Tuesday 10 November. Three in every four questions are medium or hard. Check Start here quickly, then concentrate on Level up and Champion." },
+  { id: "final", name: "Grand Final", mix: [34, 33, 33], focus: "The Grand Final is on Wednesday 25 November. It has an even mix of easy, medium and hard, so every level matters. Revise all three." },
 ];
 const YEAR_KEY = "chms-prep-year";
 

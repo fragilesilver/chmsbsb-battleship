@@ -49,6 +49,17 @@ h4 { margin: 0 0 .35rem; font: 800 1.35rem/1.1 var(--display); }
 .facts dt { font: 800 2.4rem/1 var(--display); color: var(--hit); }
 .facts dd { margin: .15rem 0 0; }
 
+/* Key dates */
+.dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; margin-top: .75rem; }
+.date-card { padding: .9rem 1rem; background: var(--card); border: 2px solid var(--ink); border-radius: 6px; }
+.date-card p { margin: 0; }
+.date-when { color: var(--ink-soft); font-weight: 700; }
+.date-when b { display: block; color: var(--hit); font: 800 1.9rem/1.1 var(--display); }
+.date-who { margin-top: .35rem !important; font: 800 1.35rem/1.15 var(--display); }
+.date-card.final { background: var(--ink); color: var(--card); }
+.date-card.final .date-when { color: var(--sea); }
+.date-card.final .date-when b { color: var(--card); }
+
 /* 7-day plan */
 .progress { font-weight: 700; }
 .plan { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
